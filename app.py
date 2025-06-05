@@ -7,6 +7,9 @@ CORS(app)
 @app.route('/')
 def home():
     return render_template('index.html')
+@app.route('/faq')
+def faq():
+    return render_template('faq.html')
 
 @app.route('/api/data', methods=['GET'])
 def get_data():

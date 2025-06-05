@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAQ - ShopAssist</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        /* FAQ specific styles */
+        .faq-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+        
+        .faq-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+        }
+        
+        .faq-header h2 {
+            margin: 0;
+            font-size: 1.8rem;
+        }
+        
+        .faq-section {
+            margin-bottom: 2rem;
+            padding: 0 1.5rem;
+        }
+        
+        .faq-section h3 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--accent-color);
+        }
+        
+        .faq-item {
+            margin-bottom: 1rem;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .faq-question {
+            background-color: #f5f7fa;
+            padding: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .faq-question:hover {
+            background-color: #e8eef7;
+        }
+        
+        .faq-answer {
+            padding: 1rem;
+            display: none;
+            border-top: 1px solid #e0e0e0;
+            line-height: 1.6;
+        }
+        
+        .faq-question.active .fa-chevron-down {
+            transform: rotate(180deg);
+            transition: transform 0.3s;
+        }
+        
+        .faq-question .fa-chevron-down {
+            transition: transform 0.3s;
+        }
+        
+        .faq-answer.active {
+            display: block;
+        }
+        
+        .search-container {
+            padding: 1rem 1.5rem;
+            background-color: #f5f7fa;
+        }
+        
+        .search-container input {
+            width: 100%;
+            padding: 0.8rem;
+            border-radius: 30px;
+            border: 1px solid #e0e0e0;
+            outline: none;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>ShopAssist</h1>
+        <nav>
+            <ul>
+                <li><a href="/">Home</a></li>
+                <li><a href="#">Products</a></li>
+                <li><a href="#">Cart</a></li>
+                <li><a href="#">Account</a></li>
+                <li><a href="/faq" class="active">FAQ</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <div class="faq-container">
+            <div class="faq-header">
+                <h2>Frequently Asked Questions</h2>
+                <p>Find answers to the most common questions about ShopAssist</p>
+            </div>
+            
+            <div class="search-container">
+                <input type="text" placeholder="Search FAQs..." id="faq-search">
+            </div>
+            
+            <div class="faq-section">
+                <h3>General Questions</h3>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        What is ShopAssist?
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        ShopAssist is an e-commerce platform with an integrated AI assistant that helps you find the perfect products based on your preferences and needs. Our intelligent chatbot can recommend products, answer questions, and guide you through the shopping experience.
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        How do I contact customer support?
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        You can reach our customer support team by clicking the "Help & FAQ" button in our chatbot, sending an email to support@shopassist.com, or calling us at 1-800-SHOP-NOW during business hours (Monday-Friday, 9 AM - 6 PM ET).
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        Is my personal information secure?
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Yes, we take data security seriously. All personal information is encrypted and stored securely. We never share your information with third parties without your consent. For more details, please review our Privacy Policy.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="faq-section">
+                <h3>Products & Shopping</h3>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        How do I find a specific product?
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        You can use the search bar at the top of our website, browse product categories, or ask our ShopAssist chatbot to help you find specific items. Simply describe what you're looking for, and our AI will suggest relevant products.
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        Are the product images accurate?
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        We strive to provide accurate product images that represent the actual items. However, colors may appear slightly different depending on your display settings. For the most accurate representation, we recommend reading the detailed product descriptions and customer reviews.
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        Do you offer size guides for clothing?
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Yes, each clothing item has a size guide accessible from the product page. You can also ask our ShopAssist chatbot for sizing recommendations based on your measurements and preferences.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="faq-section">
+                <h3>Orders & Payment</h3>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        What payment methods do you accept?
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        We accept all major credit cards (Visa, MasterCard, American Express, Discover), PayPal, Apple Pay, and Google Pay. For certain promotions, we also accept store credit and gift cards.
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        How can I track my order?
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Once your order ships, you'll receive a tracking number via email. You can also check your order status by logging into your account or asking our ShopAssist chatbot about your recent orders.
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        Can I modify or cancel my order after placing it?
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Orders can be modified or canceled within 1 hour of placement. After that, please contact our customer service team as soon as possible. Once an order has been shipped, it cannot be canceled, but you can return it following our return policy.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="faq-section">
+                <h3>Shipping & Delivery</h3>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        How long does shipping take?
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Standard shipping typically takes 3-5 business days. Express shipping is 1-2 business days. International shipping varies by destination but generally takes 7-14 business days. Actual delivery times may vary based on your location.
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        Do you ship internationally?
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Yes, we ship to over 50 countries worldwide. International shipping costs and delivery times vary by location. You can see the specific shipping options available to your country during checkout.
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        Is free shipping available?
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Yes, we offer free standard shipping on orders over $50 within the continental United States. Premium members receive free shipping on all orders regardless of order value.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="faq-section">
+                <h3>Returns & Refunds</h3>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        What is your return policy?
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        We accept returns within 30 days of delivery for most items in new, unworn condition with original tags and packaging. Some items like underwear, swimwear, and final sale items cannot be returned for hygiene or other reasons.
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        How do I return an item?
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        To initiate a return, log into your account and select the order containing the item(s) you wish to return. Follow the prompts to generate a return label. You can also ask our ShopAssist chatbot to help you with the return process.
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        How long does it take to process a refund?
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Once we receive your return, it typically takes 3-5 business days to inspect and process. After processing, refunds are issued to your original payment method and may take an additional 2-10 business days to appear, depending on your financial institution.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="faq-section">
+                <h3>ShopAssist Chatbot Help</h3>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        What can the ShopAssist chatbot help me with?
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Our ShopAssist chatbot can help you find products, answer questions about items, provide personalized recommendations, check order status, assist with returns, and much more. Think of it as your personal shopping assistant!
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        Is the chatbot available 24/7?
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Yes, the ShopAssist chatbot is available 24 hours a day, 7 days a week. Human customer support representatives are available during business hours (Monday-Friday, 9 AM - 6 PM ET).
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        What if the chatbot can't answer my question?
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        If the chatbot is unable to resolve your issue, it will offer to connect you with a human customer service representative during business hours, or you can email our support team at support@shopassist.com.
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Include chatbot on FAQ page -->
+        <div class="chatbot-container">
+            <div class="chatbot-header">
+                <div class="bot-logo">
+                    <img src="https://cdn-icons-png.flaticon.com/512/2021/2021646.png" alt="ShopAssist Logo">
+                    <span class="status-indicator"></span>
+                </div>
+                <div class="bot-info">
+                    <h2>ShopAssist</h2>
+                    <p>Online</p>
+                </div>
+                <button class="close-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="chat-messages">
+                <div class="message bot-message">
+                    👋 Hi there! Need help finding answers? I can help you navigate our FAQ section.
+                </div>
+            </div>
+            
+            <div class="chat-input">
+                <input type="text" placeholder="Ask about our FAQs..." aria-label="Chat message">
+                <button type="submit">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // FAQ accordion functionality
+        document.querySelectorAll('.faq-question').forEach(question => {
+            question.addEventListener('click', () => {
+                // Toggle current question
+                const answer = question.nextElementSibling;
+                question.classList.toggle('active');
+                answer.classList.toggle('active');
+                
+                // Close other answers
+                document.querySelectorAll('.faq-answer.active').forEach(openAnswer => {
+                    if (openAnswer !== answer) {
+                        openAnswer.classList.remove('active');
+                        openAnswer.previousElementSibling.classList.remove('active');
+                    }
+                });
+            });
+        });
+        
+        // Search functionality
+        document.getElementById('faq-search').addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            
+            document.querySelectorAll('.faq-item').forEach(item => {
+                const question = item.querySelector('.faq-question').textContent.toLowerCase();
+                const answer = item.querySelector('.faq-answer').textContent.toLowerCase();
+                
+                if (question.includes(searchTerm) || answer.includes(searchTerm)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            
+            // Show/hide section headers based on visible questions
+            document.querySelectorAll('.faq-section').forEach(section => {
+                const visibleItems = Array.from(section.querySelectorAll('.faq-item')).filter(item => {
+                    return item.style.display !== 'none';
+                });
+                
+                if (visibleItems.length === 0) {
+                    section.style.display = 'none';
+                } else {
+                    section.style.display = 'block';
+                }
+            });
+        });
+        
+        // Chatbot functionality
+        document.querySelector('.chat-input button').addEventListener('click', function() {
+            const input = document.querySelector('.chat-input input');
+            const message = input.value.trim();
+            
+            if (message) {
+                const messagesContainer = document.querySelector('.chat-messages');
+                
+                // Add user message
+                const userMessage = document.createElement('div');
+                userMessage.classList.add('message', 'user-message');
+                userMessage.textContent = message;
+                messagesContainer.appendChild(userMessage);
+                
+                // Clear input
+                input.value = '';
+                
+                // Scroll to bottom
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                
+                // Simulate bot response
+                setTimeout(() => {
+                    const botMessage = document.createElement('div');
+                    botMessage.classList.add('message', 'bot-message');
+                    
+                    // Basic keyword matching for FAQ responses
+                    const lowercaseMsg = message.toLowerCase();
+                    
+                    if (lowercaseMsg.includes('return')) {
+                        botMessage.textContent = "We accept returns within 30 days of delivery. You can initiate a return from your account page.";
+                    } else if (lowercaseMsg.includes('shipping') || lowercaseMsg.includes('delivery')) {
+                        botMessage.textContent = "Standard shipping takes 3-5 business days. Orders over $50 qualify for free shipping!";
+                    } else if (lowercaseMsg.includes('payment')) {
+                        botMessage.textContent = "We accept all major credit cards, PayPal, Apple Pay, and Google Pay.";
+                    } else {
+                        botMessage.textContent = "To find your answer quickly, try using the search bar above or browsing through our FAQ categories.";
+                    }
+                    
+                    messagesContainer.appendChild(botMessage);
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                }, 1000);
+            }
+        });
+        
+        // Allow Enter key to send message
+        document.querySelector('.chat-input input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.querySelector('.chat-input button').click();
+            }
+        });
+        
+        // Close/minimize chatbot
+        document.querySelector('.close-btn').addEventListener('click', function() {
+            const chatbot = document.querySelector('.chatbot-container');
+            chatbot.classList.toggle('minimized');
+        });
+    </script>
+</body>
+</html>

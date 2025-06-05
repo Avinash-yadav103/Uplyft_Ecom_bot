@@ -21,6 +21,12 @@
         </nav>
     </header>
 
+    <div class="openbox">
+        <button class="open-chat-btn" onClick=toggleChat()>
+            <i class="fas fa-comments"></i> Chat with us
+        </button>
+    </div>
+
     <main>
         <div class="user-profile">
             <div class="user-avatar">
@@ -42,7 +48,7 @@
                     <h2>ShopAssist</h2>
                     <p>Online</p>
                 </div>
-                <button class="close-btn">
+                <button class="close-btn" onClick=toggleChat()>
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -52,50 +58,6 @@
                     👋 Hi Alex! Welcome to our store. How can I help you today?
                 </div>
                 
-                <div class="message user-message">
-                    I'm looking for running shoes.
-                </div>
-                
-                <div class="message bot-message">
-                    Great choice! I can help you find the perfect running shoes. What's your preferred brand or price range?
-                </div>
-                
-                <div class="message user-message">
-                    Nike, under $150
-                </div>
-                
-                <div class="message bot-message">
-                    Excellent! Here are some Nike running shoes under $150 that might interest you:
-                </div>
-                
-                <div class="product-suggestions">
-                    <div class="product-card">
-                        <img src="https://static.nike.com/a/images/c_limit,w_592,f_auto/t_product_v1/7c5678f4-c28d-4862-a8d9-56750f839f12/revolution-6-road-running-shoes-FgfhgR.png" alt="Nike Revolution 6">
-                        <div class="product-info">
-                            <h4>Nike Revolution 6</h4>
-                            <p>$89.99</p>
-                        </div>
-                    </div>
-                    <div class="product-card">
-                        <img src="https://static.nike.com/a/images/c_limit,w_592,f_auto/t_product_v1/ede725a3-80e1-4ab8-9727-a4beb94f74b6/react-infinity-run-flyknit-3-road-running-shoes-S5Srkp.png" alt="Nike React Infinity">
-                        <div class="product-info">
-                            <h4>Nike React Infinity</h4>
-                            <p>$129.99</p>
-                        </div>
-                    </div>
-                    <div class="product-card">
-                        <img src="https://static.nike.com/a/images/c_limit,w_592,f_auto/t_product_v1/e8e530a3-2317-4283-91b8-51e7f5b18041/winflo-9-road-running-shoes-MzzrVJ.png" alt="Nike Winflo 9">
-                        <div class="product-info">
-                            <h4>Nike Winflo 9</h4>
-                            <p>$99.99</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="message bot-message">
-                    Would you like more details on any of these models? Or would you prefer to see different options?
-                </div>
-
                 <!-- Quick Replies Section -->
                 <div class="quick-replies">
                     <button class="quick-reply-btn">
@@ -105,12 +67,13 @@
                         <i class="fas fa-tag"></i> Today's Deals
                     </button>
                     <button class="quick-reply-btn">
-                        <i class="fas fa-question-circle"></i> Help & FAQ
+                        <a href='faq'><i class="fas fa-question-circle"></i> Help & FAQ</a
                     </button>
                     <button class="quick-reply-btn">
                         <i class="fas fa-shopping-cart"></i> My Orders
                     </button>
                 </div>
+
             </div>
             
             <div class="chat-input">
@@ -122,14 +85,17 @@
         </div>
     </main>
     <script>
-        function getData() {
-            fetch('http://localhost:5000/api/products')
-                .then(response => response.json())
-                .then(data => {
-                document.getElementById('output').innerText = JSON.stringify(data, null, 2);
-                })
-                .catch(error => console.error('Error:', error));
-    }
+        async function getData() {
+            fetch('https://dummyjson.com/products')
+            .then(res => res.json())
+            .then(console.log);
+        }
+        getData();
+
+        function toggleChat(){
+            const chatbox = document.querySelector('.chatbot-container');
+            chatbox.style.display = (chatbox.style.display === 'none' || chatbox.style.display==='')? 'block':'none';
+        }
     </script>
 
     <script>
@@ -137,8 +103,25 @@
         document.querySelector('.chat-input button').addEventListener('click', function() {
             const input = document.querySelector('.chat-input input');
             const message = input.value.trim();
-            
-            if (message) {
+            const messagesContainer = document.querySelector('.chat-messages');
+            const messageForBot = message.toLowerCase(); // Convert to lowercase for processing
+
+            if(message === 'hello') {
+                const userMessage = document.createElement('div');
+                userMessage.classList.add('message', 'user-message');
+                userMessage.textContent = message;
+                messagesContainer.appendChild(userMessage);
+
+                setTimeout(() => {
+                    const botMessage = document.createElement('div');
+                    botMessage.classList.add('message', 'bot-message');
+                    botMessage.textContent = "👋 Hi Alex! Welcome to our store. How can I help you today?";
+                    messagesContainer.appendChild(botMessage);
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                }, 1000);
+                
+                return;
+            }else {
                 const messagesContainer = document.querySelector('.chat-messages');
                 
                 // Add user message
@@ -146,7 +129,6 @@
                 userMessage.classList.add('message', 'user-message');
                 userMessage.textContent = message;
                 messagesContainer.appendChild(userMessage);
-                
                 // Clear input
                 input.value = '';
                 
