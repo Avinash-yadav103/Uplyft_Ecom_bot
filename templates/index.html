@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShopAssist - E-Commerce Chatbot</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header>
+        <h1>ShopAssist</h1>
+        <nav>
+            <ul>
+                <li><a href="">Home</a></li>
+                <li><a href="">Products</a></li>
+                <li><a href="">Cart</a></li>
+                <li><a href="">Account</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <div class="user-profile">
+            <div class="user-avatar">
+                <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&auto=format&fit=crop&w=250&q=80" alt="User Avatar">
+            </div>
+            <div class="user-info">
+                <h3>Welcome, Alex!</h3>
+                <p>Premium Member since 2023</p>
+            </div>
+        </div>
+
+        <div class="chatbot-container">
+            <div class="chatbot-header">
+                <div class="bot-logo">
+                    <img src="https://cdn-icons-png.flaticon.com/512/4712/4712027.png" alt="ShopAssist Logo">
+                </div>
+                <div class="bot-info">
+                    <h2>ShopAssist</h2>
+                    <p>Your personal shopping assistant</p>
+                </div>
+            </div>
+            
+            <div class="chat-messages">
+                <div class="message bot-message">
+                    👋 Hi Alex! Welcome to our store. How can I help you today?
+                </div>
+                
+                <div class="message user-message">
+                    I'm looking for running shoes.
+                </div>
+                
+                <div class="message bot-message">
+                    Great choice! I can help you find the perfect running shoes. What's your preferred brand or price range?
+                </div>
+                
+                <div class="message user-message">
+                    Nike, under $150
+                </div>
+                
+                <div class="message bot-message">
+                    Excellent! Here are some Nike running shoes under $150 that might interest you:
+                </div>
+                
+                <div class="product-suggestions">
+                    <div class="product-card">
+                        <img src="https://static.nike.com/a/images/c_limit,w_592,f_auto/t_product_v1/7c5678f4-c28d-4862-a8d9-56750f839f12/revolution-6-road-running-shoes-FgfhgR.png" alt="Nike Revolution 6">
+                        <div class="product-info">
+                            <h4>Nike Revolution 6</h4>
+                            <p>$89.99</p>
+                        </div>
+                    </div>
+                    <div class="product-card">
+                        <img src="https://static.nike.com/a/images/c_limit,w_592,f_auto/t_product_v1/ede725a3-80e1-4ab8-9727-a4beb94f74b6/react-infinity-run-flyknit-3-road-running-shoes-S5Srkp.png" alt="Nike React Infinity">
+                        <div class="product-info">
+                            <h4>Nike React Infinity</h4>
+                            <p>$129.99</p>
+                        </div>
+                    </div>
+                    <div class="product-card">
+                        <img src="https://static.nike.com/a/images/c_limit,w_592,f_auto/t_product_v1/e8e530a3-2317-4283-91b8-51e7f5b18041/winflo-9-road-running-shoes-MzzrVJ.png" alt="Nike Winflo 9">
+                        <div class="product-info">
+                            <h4>Nike Winflo 9</h4>
+                            <p>$99.99</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="message bot-message">
+                    Would you like more details on any of these models? Or would you prefer to see different options?
+                </div>
+            </div>
+            
+            <div class="chat-input">
+                <input type="text" placeholder="Type your message here..." aria-label="Chat message">
+                <button type="submit">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Basic functionality to add new messages
+        document.querySelector('.chat-input button').addEventListener('click', function() {
+            const input = document.querySelector('.chat-input input');
+            const message = input.value.trim();
+            
+            if (message) {
+                const messagesContainer = document.querySelector('.chat-messages');
+                
+                // Add user message
+                const userMessage = document.createElement('div');
+                userMessage.classList.add('message', 'user-message');
+                userMessage.textContent = message;
+                messagesContainer.appendChild(userMessage);
+                
+                // Clear input
+                input.value = '';
+                
+                // Scroll to bottom
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                
+                // Simulate bot response (in a real app, you'd call your API here)
+                setTimeout(() => {
+                    const botMessage = document.createElement('div');
+                    botMessage.classList.add('message', 'bot-message');
+                    botMessage.textContent = "Thank you for your message! Our team will help you find the perfect product.";
+                    messagesContainer.appendChild(botMessage);
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                }, 1000);
+            }
+        });
+        
+        // Allow Enter key to send message
+        document.querySelector('.chat-input input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.querySelector('.chat-input button').click();
+            }
+        });
+    </script>
+</body>
+</html>
