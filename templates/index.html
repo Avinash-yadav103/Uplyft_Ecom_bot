@@ -35,12 +35,16 @@
         <div class="chatbot-container">
             <div class="chatbot-header">
                 <div class="bot-logo">
-                    <img src="https://cdn-icons-png.flaticon.com/512/4712/4712027.png" alt="ShopAssist Logo">
+                    <img src="https://cdn-icons-png.flaticon.com/512/2021/2021646.png" alt="ShopAssist Logo">
+                    <span class="status-indicator"></span>
                 </div>
                 <div class="bot-info">
                     <h2>ShopAssist</h2>
-                    <p>Your personal shopping assistant</p>
+                    <p>Online</p>
                 </div>
+                <button class="close-btn">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
             
             <div class="chat-messages">
@@ -91,6 +95,22 @@
                 <div class="message bot-message">
                     Would you like more details on any of these models? Or would you prefer to see different options?
                 </div>
+
+                <!-- Quick Replies Section -->
+                <div class="quick-replies">
+                    <button class="quick-reply-btn">
+                        <i class="fas fa-tshirt"></i> Browse Products
+                    </button>
+                    <button class="quick-reply-btn">
+                        <i class="fas fa-tag"></i> Today's Deals
+                    </button>
+                    <button class="quick-reply-btn">
+                        <i class="fas fa-question-circle"></i> Help & FAQ
+                    </button>
+                    <button class="quick-reply-btn">
+                        <i class="fas fa-shopping-cart"></i> My Orders
+                    </button>
+                </div>
             </div>
             
             <div class="chat-input">
@@ -101,9 +121,19 @@
             </div>
         </div>
     </main>
+    <script>
+        function getData() {
+            fetch('http://localhost:5000/api/products')
+                .then(response => response.json())
+                .then(data => {
+                document.getElementById('output').innerText = JSON.stringify(data, null, 2);
+                })
+                .catch(error => console.error('Error:', error));
+    }
+    </script>
 
     <script>
-        // Basic functionality to add new messages
+        // to add new messages
         document.querySelector('.chat-input button').addEventListener('click', function() {
             const input = document.querySelector('.chat-input input');
             const message = input.value.trim();
