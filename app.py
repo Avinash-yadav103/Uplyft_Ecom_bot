@@ -1,12 +1,14 @@
 from flask import Flask, jsonify, request, render_template
 from flask_cors import CORS
+import os
 
 app = Flask(__name__)
 CORS(app)  
 
 @app.route('/')
-def home():
-    return render_template('index.html')
+def index():
+    gemini_api_key = os.environ.get('GEMINI_API_KEY', '')
+    return render_template('index.html', gemini_api_key=gemini_api_key)
 @app.route('/faq')
 def faq():
     return render_template('faq.html')

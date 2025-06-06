@@ -21,6 +21,8 @@
         </nav>
     </header>
 
+    Search using AI feature
+
     <div class="openbox">
         <button class="open-chat-btn" onClick=toggleChat()>
             <i class="fas fa-comments"></i> Chat with us
@@ -60,7 +62,7 @@
                 
                 <!-- Quick Replies Section -->
                 <div class="quick-replies">
-                    <button class="quick-reply-btn">
+                    <button class="quick-reply-btn" onclick=getCategories()>
                         <i class="fas fa-tshirt"></i> Browse Products
                     </button>
                     <button class="quick-reply-btn">
@@ -69,8 +71,8 @@
                     <button class="quick-reply-btn">
                         <a href='faq'><i class="fas fa-question-circle"></i> Help & FAQ</a
                     </button>
-                    <button class="quick-reply-btn">
-                        <i class="fas fa-shopping-cart"></i> My Orders
+                    <button class="quick-reply-btn" onclick="searchWithAI()">
+                        <i class="fas fa-shopping-cart"></i> Search With AI
                     </button>
                 </div>
 
@@ -85,6 +87,18 @@
         </div>
     </main>
     <script>
+        getCategories = async function getCategories() {
+            fetch('https://dummyjson.com/products/categories')
+            .then(res => res.json())
+            .then(data => {
+                const messagesContainer = document.querySelector('.chat-messages');
+                const categoryMessage = document.createElement('div');
+                categoryMessage.classList.add('message', 'bot-message');
+                categoryMessage.innerHTML = `<strong>Available Categories:</strong> ${data.join(', ')}`;
+                messagesContainer.appendChild(categoryMessage);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            });
+        }
         async function getData() {
             fetch('https://dummyjson.com/products')
             .then(res => res.json())
@@ -99,19 +113,68 @@
     </script>
 
     <script>
+        window.GEMINI_API_KEY = "{{ gemini_api_key }}";
+    </script>
+    <script src="{{ url_for('static', filename='js/gemini-search.js') }}"></script>
+
+    <script>
         // to add new messages
-        document.querySelector('.chat-input button').addEventListener('click', function() {
+        document.querySelector('.chat-input button').addEventListener('click', async function() {
             const input = document.querySelector('.chat-input input');
             const message = input.value.trim();
+            
+            if (!message) return; // Don't process empty messages
+            
             const messagesContainer = document.querySelector('.chat-messages');
-            const messageForBot = message.toLowerCase(); // Convert to lowercase for processing
-
-            if(message === 'hello') {
-                const userMessage = document.createElement('div');
-                userMessage.classList.add('message', 'user-message');
-                userMessage.textContent = message;
-                messagesContainer.appendChild(userMessage);
-
+            
+            // Display user message
+            const userMessage = document.createElement('div');
+            userMessage.classList.add('message', 'user-message');
+            userMessage.textContent = message;
+            messagesContainer.appendChild(userMessage);
+            
+            // Clear input field
+            input.value = '';
+            
+            // Check if we're in AI search mode
+            if (sessionStorage.getItem('aiSearchMode') === 'active') {
+                // Show loading message
+                const loadingMessage = document.createElement('div');
+                loadingMessage.classList.add('message', 'bot-message');
+                loadingMessage.innerHTML = "🤔 Searching products based on your description...";
+                messagesContainer.appendChild(loadingMessage);
+                
+                try {
+                    // Call Gemini API with the user's query
+                    const response = await queryGeminiAPI(message);
+                    
+                    messagesContainer.removeChild(loadingMessage);
+                    
+                    const botMessage = document.createElement('div');
+                    botMessage.classList.add('message', 'bot-message');
+                    botMessage.innerHTML = response.text;
+                    messagesContainer.appendChild(botMessage);
+                    
+                    // product suggestions
+                    if (response.products && response.products.length > 0) {
+                        const productSuggestions = document.createElement('div');
+                        productSuggestions.classList.add('product-suggestions');
+                        
+                        response.products.forEach(product => {
+                            const productCard = createProductCard(product);
+                            productSuggestions.appendChild(productCard);
+                        });
+                        
+                        messagesContainer.appendChild(productSuggestions);
+                    }
+                } catch (error) {
+                    console.error("AI search error:", error);
+                    const errorMessage = document.createElement('div');
+                    errorMessage.classList.add('message', 'bot-message');
+                    errorMessage.innerHTML = "Sorry, I encountered an error while searching. Please try again later.";
+                    messagesContainer.appendChild(errorMessage);
+                }
+            } else if(message.toLowerCase() === 'hello') {
                 setTimeout(() => {
                     const botMessage = document.createElement('div');
                     botMessage.classList.add('message', 'bot-message');
@@ -119,23 +182,8 @@
                     messagesContainer.appendChild(botMessage);
                     messagesContainer.scrollTop = messagesContainer.scrollHeight;
                 }, 1000);
-                
-                return;
-            }else {
-                const messagesContainer = document.querySelector('.chat-messages');
-                
-                // Add user message
-                const userMessage = document.createElement('div');
-                userMessage.classList.add('message', 'user-message');
-                userMessage.textContent = message;
-                messagesContainer.appendChild(userMessage);
-                // Clear input
-                input.value = '';
-                
-                // Scroll to bottom
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                
-                // Simulate bot response (in a real app, you'd call your API here)
+            } else {
+                // Default message handling
                 setTimeout(() => {
                     const botMessage = document.createElement('div');
                     botMessage.classList.add('message', 'bot-message');
@@ -144,6 +192,9 @@
                     messagesContainer.scrollTop = messagesContainer.scrollHeight;
                 }, 1000);
             }
+            
+            // Scroll to bottom
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
         });
         
         // Allow Enter key to send message
