@@ -1,14 +1,19 @@
 from flask import Flask, jsonify, request, render_template
 from flask_cors import CORS
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file (keeping this for other potential env vars)
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)  
 
 @app.route('/')
 def index():
-    gemini_api_key = os.environ.get('GEMINI_API_KEY', '')
-    return render_template('index.html', gemini_api_key=gemini_api_key)
+    # Remove any gemini_api_key variable if present
+    return render_template('index.html')
+
 @app.route('/faq')
 def faq():
     return render_template('faq.html')

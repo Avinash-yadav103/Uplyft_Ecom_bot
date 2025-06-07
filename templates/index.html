@@ -22,6 +22,7 @@
     </header>
 
     Search using AI feature
+    Testing hatana and checks hatana
 
     <div class="openbox">
         <button class="open-chat-btn" onClick=toggleChat()>
@@ -69,10 +70,13 @@
                         <i class="fas fa-tag"></i> Today's Deals
                     </button>
                     <button class="quick-reply-btn">
-                        <a href='faq'><i class="fas fa-question-circle"></i> Help & FAQ</a
+                        <a href='faq'><i class="fas fa-question-circle"></i> Help & FAQ</a>
                     </button>
-                    <button class="quick-reply-btn" onclick="searchWithAI()">
-                        <i class="fas fa-shopping-cart"></i> Search With AI
+                    <button class="quick-reply-btn">
+                        <i class="fas fa-headset"></i> Contact Support
+                    </button>
+                    <button class="quick-reply-btn" onclick="downloadProductsJSON()">
+                        <i class="fas fa-file-download"></i> Get Products JSON
                     </button>
                 </div>
 
@@ -87,122 +91,359 @@
         </div>
     </main>
     <script>
-        getCategories = async function getCategories() {
-            fetch('https://dummyjson.com/products/categories')
-            .then(res => res.json())
-            .then(data => {
-                const messagesContainer = document.querySelector('.chat-messages');
-                const categoryMessage = document.createElement('div');
-                categoryMessage.classList.add('message', 'bot-message');
-                categoryMessage.innerHTML = `<strong>Available Categories:</strong> ${data.join(', ')}`;
-                messagesContainer.appendChild(categoryMessage);
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            });
-        }
-        async function getData() {
-            fetch('https://dummyjson.com/products')
-            .then(res => res.json())
-            .then(console.log);
-        }
-        getData();
+        // Global variable to store all product data
+        let allProducts = null;
 
-        function toggleChat(){
-            const chatbox = document.querySelector('.chatbot-container');
-            chatbox.style.display = (chatbox.style.display === 'none' || chatbox.style.display==='')? 'block':'none';
+        // Load products from local JSON file on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadProductsData();
+        });
+
+        // Function to load product data from local JSON
+        async function loadProductsData() {
+            try {
+                const response = await fetch('/products.json');
+                if (!response.ok) {
+                    throw new Error('Failed to load products data');
+                }
+                allProducts = await response.json();
+                console.log("Products data loaded successfully");
+            } catch (error) {
+                console.error("Error loading products data:", error);
+            }
         }
-    </script>
 
-    <script>
-        window.GEMINI_API_KEY = "{{ gemini_api_key }}";
-    </script>
-    <script src="{{ url_for('static', filename='js/gemini-search.js') }}"></script>
-
-    <script>
-        // to add new messages
-        document.querySelector('.chat-input button').addEventListener('click', async function() {
-            const input = document.querySelector('.chat-input input');
-            const message = input.value.trim();
+        // Updated getCategories function to use local JSON data
+        function getCategories() {
+            if (!allProducts) {
+                showErrorMessage("Product data is still loading. Please try again in a moment.");
+                return;
+            }
             
-            if (!message) return; // Don't process empty messages
+            // Extract unique categories from products
+            const categories = [...new Set(allProducts.products.map(product => product.category))];
             
             const messagesContainer = document.querySelector('.chat-messages');
             
-            // Display user message
+            // Create message with header
+            const categoryMessage = document.createElement('div');
+            categoryMessage.classList.add('message', 'bot-message');
+            categoryMessage.innerHTML = '<strong>Available Categories:</strong><br>';
+            
+            // Create container for category buttons
+            const categoryButtons = document.createElement('div');
+            categoryButtons.classList.add('category-buttons');
+            categoryButtons.style.display = 'flex';
+            categoryButtons.style.flexWrap = 'wrap';
+            categoryButtons.style.gap = '8px';
+            categoryButtons.style.marginTop = '10px';
+            
+            // Add each category as a clickable button
+            categories.forEach(category => {
+                const button = document.createElement('button');
+                button.textContent = category;
+                button.style.backgroundColor = '#f0f0f0';
+                button.style.border = '1px solid #ddd';
+                button.style.borderRadius = '20px';
+                button.style.padding = '6px 12px';
+                button.style.margin = '4px';
+                button.style.cursor = 'pointer';
+                
+                button.onclick = function() {
+                    // Show selected category
+                    const userMessage = document.createElement('div');
+                    userMessage.classList.add('message', 'user-message');
+                    userMessage.textContent = `I want to browse: ${category}`;
+                    messagesContainer.appendChild(userMessage);
+                    
+                    // Display products for selected category
+                    showProductsByCategory(category);
+                };
+                
+                categoryButtons.appendChild(button);
+            });
+            
+            // Add buttons to message
+            categoryMessage.appendChild(categoryButtons);
+            messagesContainer.appendChild(categoryMessage);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Function to display products from selected category
+        function showProductsByCategory(category) {
+            const messagesContainer = document.querySelector('.chat-messages');
+            
+            // Filter products by category
+            const categoryProducts = allProducts.products.filter(product => product.category === category);
+            
+            // Create loading message
+            const loadingMessage = document.createElement('div');
+            loadingMessage.classList.add('message', 'bot-message');
+            loadingMessage.textContent = `Finding ${category} products for you...`;
+            messagesContainer.appendChild(loadingMessage);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            // Simulate loading delay (remove in production if not needed)
+            setTimeout(() => {
+                // Replace loading message
+                messagesContainer.removeChild(loadingMessage);
+                
+                // Create products message
+                const productsMessage = document.createElement('div');
+                productsMessage.classList.add('message', 'bot-message');
+                
+                if (categoryProducts.length === 0) {
+                    productsMessage.textContent = `Sorry, no ${category} products found.`;
+                } else {
+                    productsMessage.innerHTML = `<strong>Here are some ${category} products:</strong><br>`;
+                    
+                    // Create product list container
+                    const productListContainer = document.createElement('div');
+                    productListContainer.classList.add('product-list');
+                    productListContainer.style.marginTop = '10px';
+                    
+                    // Add top 5 products
+                    const topProducts = categoryProducts.slice(0, 5);
+                    topProducts.forEach(product => {
+                        const productItem = document.createElement('div');
+                        productItem.classList.add('product-item');
+                        productItem.style.padding = '8px';
+                        productItem.style.margin = '6px 0';
+                        productItem.style.border = '1px solid #eaeaea';
+                        productItem.style.borderRadius = '8px';
+                        productItem.style.cursor = 'pointer';
+                        
+                        // Calculate discount price
+                        const discountedPrice = (product.price * (1 - product.discountPercentage/100)).toFixed(2);
+                        
+                        productItem.innerHTML = `
+                            <div style="display: flex; align-items: center;">
+                                ${product.thumbnail ? `<img src="${product.thumbnail}" alt="${product.title}" style="width: 40px; height: 40px; object-fit: cover; margin-right: 10px; border-radius: 4px;">` : ''}
+                                <div>
+                                    <strong>${product.title}</strong>
+                                    <div>${product.discountPercentage > 0 ? `<span style="color: #666; text-decoration: line-through;">$${product.price.toFixed(2)}</span> <span style="color: #e0292a; font-weight: bold;">$${discountedPrice}</span>` : `$${product.price.toFixed(2)}`}</div>
+                                </div>
+                            </div>
+                        `;
+                        
+                        productItem.onclick = function() {
+                            showProductDetails(product);
+                        };
+                        
+                        productListContainer.appendChild(productItem);
+                    });
+                    
+                    productsMessage.appendChild(productListContainer);
+                    
+                    if (categoryProducts.length > 5) {
+                        const showMoreButton = document.createElement('button');
+                        showMoreButton.textContent = 'Show More Products';
+                        showMoreButton.style.marginTop = '8px';
+                        showMoreButton.style.padding = '6px 12px';
+                        showMoreButton.style.backgroundColor = '#4285f4';
+                        showMoreButton.style.color = 'white';
+                        showMoreButton.style.border = 'none';
+                        showMoreButton.style.borderRadius = '4px';
+                        showMoreButton.style.cursor = 'pointer';
+                        
+                        showMoreButton.onclick = function() {
+                            showAllProductsByCategory(category);
+                        };
+                        
+                        productsMessage.appendChild(showMoreButton);
+                    }
+                }
+                
+                messagesContainer.appendChild(productsMessage);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }, 800);
+        }
+
+        // Function to display product details
+        function showProductDetails(product) {
+            const messagesContainer = document.querySelector('.chat-messages');
+            
+            const productDetailMessage = document.createElement('div');
+            productDetailMessage.classList.add('message', 'bot-message');
+            
+            // Calculate discount price
+            const discountedPrice = (product.price * (1 - product.discountPercentage/100)).toFixed(2);
+            
+            let discountInfo = '';
+            if (product.discountPercentage > 0) {
+                discountInfo = `<span style="color: #ff6b6b; font-weight: bold;">Save ${product.discountPercentage.toFixed(1)}%!</span>`;
+            }
+            
+            productDetailMessage.innerHTML = `
+                <div style="margin-bottom: 10px;">
+                    ${product.thumbnail ? `<img src="${product.thumbnail}" alt="${product.title}" style="width: 100%; max-height: 200px; object-fit: contain; margin-bottom: 10px; border-radius: 8px;">` : ''}
+                    <strong>${product.title}</strong><br>
+                    <span style="font-size: 0.9em;">${product.description}</span><br>
+                    <div style="margin-top: 5px;">
+                        <strong>$${discountedPrice}</strong> 
+                        ${product.discountPercentage > 0 ? `<span style="color: #666; text-decoration: line-through;">$${product.price.toFixed(2)}</span> ${discountInfo}` : ''}
+                        <br>
+                        <span style="font-size: 0.8em;">Rating: ${product.rating}/5 ⭐ | ${product.stock} in stock</span>
+                    </div>
+                </div>
+                <div class="quick-replies" style="margin-top: 10px;">
+                    <button class="quick-reply-btn" onclick="addToCart('${product.id}')">
+                        <i class="fas fa-cart-plus"></i> Add to Cart
+                    </button>
+                    <button class="quick-reply-btn">
+                        <i class="fas fa-heart"></i> Save for Later
+                    </button>
+                </div>
+            `;
+            
+            messagesContainer.appendChild(productDetailMessage);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Function to show all products from a category
+        function showAllProductsByCategory(category) {
+            const messagesContainer = document.querySelector('.chat-messages');
+            const categoryProducts = allProducts.products.filter(product => product.category === category);
+            
+            const allProductsMessage = document.createElement('div');
+            allProductsMessage.classList.add('message', 'bot-message');
+            allProductsMessage.innerHTML = `<strong>All ${category} products:</strong><br>`;
+            
+            const productGrid = document.createElement('div');
+            productGrid.style.display = 'grid';
+            productGrid.style.gridTemplateColumns = 'repeat(2, 1fr)';
+            productGrid.style.gap = '8px';
+            productGrid.style.marginTop = '10px';
+            
+            categoryProducts.forEach(product => {
+                const productItem = document.createElement('div');
+                productItem.classList.add('product-item');
+                productItem.style.padding = '8px';
+                productItem.style.border = '1px solid #eaeaea';
+                productItem.style.borderRadius = '8px';
+                productItem.style.cursor = 'pointer';
+                
+                // Calculate discount price
+                const discountedPrice = (product.price * (1 - product.discountPercentage/100)).toFixed(2);
+                
+                productItem.innerHTML = `
+                    <div>
+                        <strong>${product.title}</strong>
+                        <div style="font-size: 0.9em;">$${discountedPrice}</div>
+                    </div>
+                `;
+                
+                productItem.onclick = function() {
+                    showProductDetails(product);
+                };
+                
+                productGrid.appendChild(productItem);
+            });
+            
+            allProductsMessage.appendChild(productGrid);
+            messagesContainer.appendChild(allProductsMessage);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Helper function for error messages
+        function showErrorMessage(message) {
+            const messagesContainer = document.querySelector('.chat-messages');
+            const errorMessage = document.createElement('div');
+            errorMessage.classList.add('message', 'bot-message');
+            errorMessage.textContent = message;
+            messagesContainer.appendChild(errorMessage);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Add to Cart functionality
+        function addToCart(productId) {
+            const messagesContainer = document.querySelector('.chat-messages');
+            const confirmationMessage = document.createElement('div');
+            confirmationMessage.classList.add('message', 'bot-message');
+            confirmationMessage.innerHTML = `Product added to cart! <a href="#">View Cart</a>`;
+            messagesContainer.appendChild(confirmationMessage);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Function to handle JSON downloading - keep the existing one
+        function downloadProductsJSON() {
+            const messagesContainer = document.querySelector('.chat-messages');
+            
+            // Show user request in chat
             const userMessage = document.createElement('div');
             userMessage.classList.add('message', 'user-message');
-            userMessage.textContent = message;
+            userMessage.textContent = "I need the product data as JSON";
             messagesContainer.appendChild(userMessage);
             
-            // Clear input field
-            input.value = '';
+            // Show loading message
+            const loadingMessage = document.createElement('div');
+            loadingMessage.classList.add('message', 'bot-message');
+            loadingMessage.textContent = "Fetching product data for you...";
+            messagesContainer.appendChild(loadingMessage);
             
-            // Check if we're in AI search mode
-            if (sessionStorage.getItem('aiSearchMode') === 'active') {
-                // Show loading message
-                const loadingMessage = document.createElement('div');
-                loadingMessage.classList.add('message', 'bot-message');
-                loadingMessage.innerHTML = "🤔 Searching products based on your description...";
-                messagesContainer.appendChild(loadingMessage);
-                
-                try {
-                    // Call Gemini API with the user's query
-                    const response = await queryGeminiAPI(message);
-                    
+            // Create download from local data
+            if (allProducts) {
+                setTimeout(() => {
                     messagesContainer.removeChild(loadingMessage);
                     
-                    const botMessage = document.createElement('div');
-                    botMessage.classList.add('message', 'bot-message');
-                    botMessage.innerHTML = response.text;
-                    messagesContainer.appendChild(botMessage);
+                    // Create a JSON blob from the data
+                    const jsonData = JSON.stringify(allProducts, null, 2);
+                    const blob = new Blob([jsonData], { type: 'application/json' });
                     
-                    // product suggestions
-                    if (response.products && response.products.length > 0) {
-                        const productSuggestions = document.createElement('div');
-                        productSuggestions.classList.add('product-suggestions');
-                        
-                        response.products.forEach(product => {
-                            const productCard = createProductCard(product);
-                            productSuggestions.appendChild(productCard);
-                        });
-                        
-                        messagesContainer.appendChild(productSuggestions);
-                    }
-                } catch (error) {
-                    console.error("AI search error:", error);
-                    const errorMessage = document.createElement('div');
-                    errorMessage.classList.add('message', 'bot-message');
-                    errorMessage.innerHTML = "Sorry, I encountered an error while searching. Please try again later.";
-                    messagesContainer.appendChild(errorMessage);
-                }
-            } else if(message.toLowerCase() === 'hello') {
-                setTimeout(() => {
-                    const botMessage = document.createElement('div');
-                    botMessage.classList.add('message', 'bot-message');
-                    botMessage.textContent = "👋 Hi Alex! Welcome to our store. How can I help you today?";
-                    messagesContainer.appendChild(botMessage);
+                    // Create a URL for the blob
+                    const url = URL.createObjectURL(blob);
+                    
+                    // Add download message and button to the chat
+                    const downloadMessage = document.createElement('div');
+                    downloadMessage.classList.add('message', 'bot-message');
+                    
+                    // Create download link
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = url;
+                    downloadLink.download = 'products.json';
+                    downloadLink.className = 'quick-reply-btn';
+                    downloadLink.innerHTML = '<i class="fas fa-download"></i> Download Products JSON';
+                    downloadLink.style.display = 'inline-block';
+                    downloadLink.style.textDecoration = 'none';
+                    downloadLink.style.margin = '10px 0';
+                    
+                    downloadMessage.innerHTML = 'I\'ve fetched the product data for you. Click below to download:';
+                    downloadMessage.appendChild(document.createElement('br'));
+                    downloadMessage.appendChild(downloadLink);
+                    
+                    messagesContainer.appendChild(downloadMessage);
                     messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                    
+                    // Clean up the URL object after download
+                    downloadLink.addEventListener('click', () => {
+                        setTimeout(() => {
+                            URL.revokeObjectURL(url);
+                        }, 100);
+                    });
                 }, 1000);
             } else {
-                // Default message handling
-                setTimeout(() => {
-                    const botMessage = document.createElement('div');
-                    botMessage.classList.add('message', 'bot-message');
-                    botMessage.textContent = "Thank you for your message! Our team will help you find the perfect product.";
-                    messagesContainer.appendChild(botMessage);
-                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                }, 1000);
+                loadProductsData().then(() => {
+                    downloadProductsJSON();
+                });
             }
             
             // Scroll to bottom
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        });
-        
-        // Allow Enter key to send message
-        document.querySelector('.chat-input input').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                document.querySelector('.chat-input button').click();
+        }
+
+        function toggleChat() {
+            const chatContainer = document.querySelector('.chatbot-container');
+            const openButton = document.querySelector('.open-chat-btn');
+            
+            if (chatContainer.style.display === 'none' || !chatContainer.style.display) {
+                chatContainer.style.display = 'block';
+                if (!allProducts) {
+                    loadProductsData();
+                }
+            } else {
+                chatContainer.style.display = 'none';
             }
-        });
+        }
     </script>
 </body>
 </html>
