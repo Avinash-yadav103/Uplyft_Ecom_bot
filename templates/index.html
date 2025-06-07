@@ -91,26 +91,313 @@
         </div>
     </main>
     <script>
-        // Global variable to store all product data
+        // Enhanced product data loading with preload and retries
         let allProducts = null;
+        let isLoadingProducts = false;
+        let loadingAttempts = 0;
+        const MAX_LOADING_ATTEMPTS = 3;
 
-        // Load products from local JSON file on page load
+        // Preload products as soon as the page loads
         document.addEventListener('DOMContentLoaded', function() {
-            loadProductsData();
+            preloadProductData();
+            
+            // Show loading indicator in the chat immediately
+            const messagesContainer = document.querySelector('.chat-messages');
+            const loadingIndicator = document.createElement('div');
+            loadingIndicator.classList.add('message', 'bot-message', 'loading-indicator');
+            loadingIndicator.innerHTML = 'Loading product data... <div class="loading-spinner"></div>';
+            loadingIndicator.id = 'loading-indicator';
+            messagesContainer.appendChild(loadingIndicator);
         });
 
-        // Function to load product data from local JSON
-        async function loadProductsData() {
+        // Preload function with retry capability
+        async function preloadProductData() {
+            if (isLoadingProducts || allProducts) return;
+            
+            isLoadingProducts = true;
+            loadingAttempts++;
+            
             try {
-                const response = await fetch('/products.json');
+                // First try to load from local file
+                const response = await fetch('/static/products.json');
                 if (!response.ok) {
-                    throw new Error('Failed to load products data');
+                    throw new Error(`Failed to load products from local file: ${response.status}`);
                 }
+                
                 allProducts = await response.json();
-                console.log("Products data loaded successfully");
+                console.log("Products data loaded successfully from local file");
+                
+                // Remove loading indicator if it exists
+                const loadingIndicator = document.getElementById('loading-indicator');
+                if (loadingIndicator) {
+                    loadingIndicator.remove();
+                }
+                
+                // Show success message
+                showBotMessage("Product data loaded successfully! How can I help you today?");
+                
+                // Enable all chat buttons
+                enableChatInteractions();
+                
+                isLoadingProducts = false;
             } catch (error) {
-                console.error("Error loading products data:", error);
+                console.error("Error loading products from local file:", error);
+                
+                // Try loading from DummyJSON API as fallback
+                try {
+                    console.log("Attempting to load from DummyJSON API...");
+                    const dummyResponse = await fetch('https://dummyjson.com/products?limit=100');
+                    if (!dummyResponse.ok) {
+                        throw new Error(`Failed to load products from API: ${dummyResponse.status}`);
+                    }
+                    
+                    allProducts = await dummyResponse.json();
+                    console.log("Products data loaded successfully from DummyJSON API");
+                    
+                    // Remove loading indicator if it exists
+                    const loadingIndicator = document.getElementById('loading-indicator');
+                    if (loadingIndicator) {
+                        loadingIndicator.remove();
+                    }
+                    
+                    // Show success message
+                    showBotMessage("Product data loaded successfully! How can I help you today?");
+                    
+                    // Enable all chat buttons
+                    enableChatInteractions();
+                    
+                    isLoadingProducts = false;
+                } catch (apiError) {
+                    console.error("Error loading products from API:", apiError);
+                    
+                    if (loadingAttempts < MAX_LOADING_ATTEMPTS) {
+                        // Retry loading after delay
+                        isLoadingProducts = false;
+                        setTimeout(preloadProductData, 2000);
+                        
+                        // Update loading message
+                        const loadingIndicator = document.getElementById('loading-indicator');
+                        if (loadingIndicator) {
+                            loadingIndicator.innerHTML = `Retrying product data load (${loadingAttempts}/${MAX_LOADING_ATTEMPTS})... <div class="loading-spinner"></div>`;
+                        }
+                    } else {
+                        // Max retries reached, show error and add retry button
+                        const loadingIndicator = document.getElementById('loading-indicator');
+                        if (loadingIndicator) {
+                            loadingIndicator.remove();
+                        }
+                        
+                        showErrorMessage("Unable to load product data. Please refresh the page or try again later.");
+                        addRetryButton();
+                        enableChatInteractions(); // Enable chat even though loading failed
+                        isLoadingProducts = false;
+                    }
+                }
             }
+        }
+
+        // Enable all chat buttons after data is loaded
+        function enableChatInteractions() {
+            const buttons = document.querySelectorAll('.quick-reply-btn');
+            buttons.forEach(button => {
+                button.disabled = false;
+            });
+        }
+
+        // Add CSS for loading spinner
+        const style = document.createElement('style');
+        style.textContent = `
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0,0,0,0.1);
+            border-radius: 50%;
+            border-top-color: #3498db;
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        `;
+        document.head.appendChild(style);
+
+        // Override the getCategories function to check data status
+        function getCategories() {
+            if (!allProducts) {
+                // If not loaded yet, try to load again
+                if (!isLoadingProducts) {
+                    preloadProductData();
+                    showBotMessage("Loading product data now. Please wait a moment...");
+                } else {
+                    showBotMessage("Product data is still loading. Please wait a moment...");
+                }
+                return;
+            }
+            
+            const messagesContainer = document.querySelector('.chat-messages');
+            
+            // Add user message
+            const userMessage = document.createElement('div');
+            userMessage.classList.add('message', 'user-message');
+            userMessage.textContent = "I want to browse products";
+            messagesContainer.appendChild(userMessage);
+            
+            // Create loading message
+            const loadingMessage = document.createElement('div');
+            loadingMessage.classList.add('message', 'bot-message');
+            loadingMessage.textContent = "Finding product categories for you...";
+            messagesContainer.appendChild(loadingMessage);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            setTimeout(() => {
+                // Remove loading message
+                messagesContainer.removeChild(loadingMessage);
+                
+                // Extract unique categories
+                let categories = [];
+                if (allProducts.products) {
+                    categories = [...new Set(allProducts.products.map(product => product.category))];
+                } else if (Array.isArray(allProducts)) {
+                    categories = [...new Set(allProducts.map(product => product.category))];
+                }
+                
+                categories = categories.filter(category => category && category.trim() !== '').sort();
+                
+                // Create categories message
+                const categoriesMessage = document.createElement('div');
+                categoriesMessage.classList.add('message', 'bot-message');
+                
+                if (categories.length === 0) {
+                    categoriesMessage.textContent = "I couldn't find any product categories. Please try again later.";
+                    messagesContainer.appendChild(categoriesMessage);
+                    return;
+                }
+                
+                categoriesMessage.innerHTML = '<strong>Available Product Categories:</strong><br>';
+                
+                // Create styled category container
+                const categoryContainer = document.createElement('div');
+                categoryContainer.style.display = 'flex';
+                categoryContainer.style.flexWrap = 'wrap';
+                categoryContainer.style.gap = '10px';
+                categoryContainer.style.marginTop = '10px';
+                
+                // Create category buttons with nice styling
+                categories.forEach(category => {
+                    const categoryButton = document.createElement('div');
+                    categoryButton.classList.add('category-button');
+                    categoryButton.style.backgroundColor = '#f0f8ff';
+                    categoryButton.style.border = '1px solid #4285f4';
+                    categoryButton.style.borderRadius = '20px';
+                    categoryButton.style.padding = '8px 15px';
+                    categoryButton.style.margin = '5px';
+                    categoryButton.style.cursor = 'pointer';
+                    categoryButton.style.textTransform = 'capitalize';
+                    categoryButton.style.transition = 'all 0.3s ease';
+                    categoryButton.style.display = 'flex';
+                    categoryButton.style.alignItems = 'center';
+                    categoryButton.style.boxShadow = '0 2px 5px rgba(0,0,0,0.1)';
+                    
+                    // Add icon based on category
+                    let icon = '📦';
+                    if (category === 'beauty') icon = '💄';
+                    if (category === 'fragrances') icon = '🧴';
+                    if (category === 'furniture') icon = '🪑';
+                    if (category === 'groceries') icon = '🛒';
+                    
+                    categoryButton.innerHTML = `<span style="margin-right: 8px; font-size: 1.2em;">${icon}</span> ${category}`;
+                    
+                    // Add hover effect
+                    categoryButton.addEventListener('mouseover', function() {
+                        this.style.backgroundColor = '#4285f4';
+                        this.style.color = 'white';
+                        this.style.transform = 'translateY(-2px)';
+                        this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+                    });
+                    
+                    categoryButton.addEventListener('mouseout', function() {
+                        this.style.backgroundColor = '#f0f8ff';
+                        this.style.color = 'black';
+                        this.style.transform = 'translateY(0)';
+                        this.style.boxShadow = '0 2px 5px rgba(0,0,0,0.1)';
+                    });
+                    
+                    // Add click handler
+                    categoryButton.addEventListener('click', function() {
+                        showProductsByCategory(category);
+                    });
+                    
+                    categoryContainer.appendChild(categoryButton);
+                });
+                
+                categoriesMessage.appendChild(categoryContainer);
+                messagesContainer.appendChild(categoriesMessage);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }, 1000);
+        }
+
+        // Function to extract and clean up categories from product data
+        function extractCategories(products) {
+            // Filter out undefined/null categories and remove duplicates
+            return [...new Set(products
+                .map(product => product.category)
+                .filter(category => category && category.trim() !== '')
+            )].sort();
+        }
+
+        // Updated getCategories function with better handling
+        function getCategories() {
+            if (!allProducts) {
+                showErrorMessage("Product data is still loading. Please try again in a moment.");
+                return;
+            }
+            
+            // Extract unique categories from products with better error handling
+            const categories = extractCategories(allProducts.products);
+            
+            if (categories.length === 0) {
+                showErrorMessage("No product categories available.");
+                return;
+            }
+            
+            const messagesContainer = document.querySelector('.chat-messages');
+            
+            // Create message with header
+            const categoryMessage = document.createElement('div');
+            categoryMessage.classList.add('message', 'bot-message');
+            categoryMessage.innerHTML = '<strong>Available Categories:</strong><br>';
+            
+            // Create container for category buttons with product-suggestions class
+            const categoryButtons = document.createElement('div');
+            categoryButtons.classList.add('category-buttons', 'product-suggestions');
+            
+            // Add each category as a clickable button
+            categories.forEach(category => {
+                const button = document.createElement('button');
+                button.textContent = category;
+                button.classList.add('quick-reply-btn');
+                
+                button.onclick = function() {
+                    // Show selected category
+                    const userMessage = document.createElement('div');
+                    userMessage.classList.add('message', 'user-message');
+                    userMessage.textContent = `I want to browse: ${category}`;
+                    messagesContainer.appendChild(userMessage);
+                    
+                    // Display products for selected category
+                    showProductsByCategory(category);
+                };
+                
+                categoryButtons.appendChild(button);
+            });
+            
+            // Add buttons to message
+            categoryMessage.appendChild(categoryButtons);
+            messagesContainer.appendChild(categoryMessage);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
 
         // Updated getCategories function to use local JSON data
@@ -169,12 +456,14 @@
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
 
-        // Function to display products from selected category
+        // Updated function to display products from selected category
         function showProductsByCategory(category) {
             const messagesContainer = document.querySelector('.chat-messages');
             
-            // Filter products by category
-            const categoryProducts = allProducts.products.filter(product => product.category === category);
+            // Filter products by category with better error handling
+            const categoryProducts = allProducts.products.filter(
+                product => product.category === category
+            );
             
             // Create loading message
             const loadingMessage = document.createElement('div');
@@ -183,7 +472,6 @@
             messagesContainer.appendChild(loadingMessage);
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
             
-            // Simulate loading delay (remove in production if not needed)
             setTimeout(() => {
                 // Replace loading message
                 messagesContainer.removeChild(loadingMessage);
@@ -197,31 +485,36 @@
                 } else {
                     productsMessage.innerHTML = `<strong>Here are some ${category} products:</strong><br>`;
                     
-                    // Create product list container
+                    // Create product list container using product-suggestions class
                     const productListContainer = document.createElement('div');
-                    productListContainer.classList.add('product-list');
-                    productListContainer.style.marginTop = '10px';
+                    productListContainer.classList.add('product-list', 'product-suggestions');
                     
-                    // Add top 5 products
+                    // Add top 5 products or all if less than 5
                     const topProducts = categoryProducts.slice(0, 5);
                     topProducts.forEach(product => {
+                        // Create a product card using the existing CSS classes
                         const productItem = document.createElement('div');
-                        productItem.classList.add('product-item');
-                        productItem.style.padding = '8px';
-                        productItem.style.margin = '6px 0';
-                        productItem.style.border = '1px solid #eaeaea';
-                        productItem.style.borderRadius = '8px';
-                        productItem.style.cursor = 'pointer';
+                        productItem.classList.add('product-card');
                         
-                        // Calculate discount price
-                        const discountedPrice = (product.price * (1 - product.discountPercentage/100)).toFixed(2);
+                        // Handle price and discount with error checking
+                        const price = product.price || 0;
+                        const discountPercentage = product.discountPercentage || 0;
+                        const discountedPrice = (price * (1 - discountPercentage/100)).toFixed(2);
                         
+                        // Create product HTML with appropriate fallbacks
                         productItem.innerHTML = `
-                            <div style="display: flex; align-items: center;">
-                                ${product.thumbnail ? `<img src="${product.thumbnail}" alt="${product.title}" style="width: 40px; height: 40px; object-fit: cover; margin-right: 10px; border-radius: 4px;">` : ''}
-                                <div>
-                                    <strong>${product.title}</strong>
-                                    <div>${product.discountPercentage > 0 ? `<span style="color: #666; text-decoration: line-through;">$${product.price.toFixed(2)}</span> <span style="color: #e0292a; font-weight: bold;">$${discountedPrice}</span>` : `$${product.price.toFixed(2)}`}</div>
+                            <div class="product-image">
+                                ${product.thumbnail ? 
+                                    `<img src="${product.thumbnail}" alt="${product.title || 'Product'}">` : 
+                                    '<div class="no-image">No image</div>'}
+                            </div>
+                            <div class="product-info">
+                                <h4>${product.title || 'Untitled Product'}</h4>
+                                <div class="product-price">
+                                    ${discountPercentage > 0 ? 
+                                        `<span class="original-price">$${price.toFixed(2)}</span>
+                                        <span class="discount-price">$${discountedPrice}</span>` : 
+                                        `<span class="regular-price">$${price.toFixed(2)}</span>`}
                                 </div>
                             </div>
                         `;
@@ -238,13 +531,7 @@
                     if (categoryProducts.length > 5) {
                         const showMoreButton = document.createElement('button');
                         showMoreButton.textContent = 'Show More Products';
-                        showMoreButton.style.marginTop = '8px';
-                        showMoreButton.style.padding = '6px 12px';
-                        showMoreButton.style.backgroundColor = '#4285f4';
-                        showMoreButton.style.color = 'white';
-                        showMoreButton.style.border = 'none';
-                        showMoreButton.style.borderRadius = '4px';
-                        showMoreButton.style.cursor = 'pointer';
+                        showMoreButton.classList.add('quick-reply-btn');
                         
                         showMoreButton.onclick = function() {
                             showAllProductsByCategory(category);
@@ -259,31 +546,51 @@
             }, 800);
         }
 
-        // Function to display product details
+        // Enhanced function to display product details
         function showProductDetails(product) {
             const messagesContainer = document.querySelector('.chat-messages');
             
             const productDetailMessage = document.createElement('div');
             productDetailMessage.classList.add('message', 'bot-message');
             
-            // Calculate discount price
-            const discountedPrice = (product.price * (1 - product.discountPercentage/100)).toFixed(2);
+            // Handle potential missing data with fallbacks
+            const title = product.title || 'Untitled Product';
+            const description = product.description || 'No description available';
+            const price = product.price || 0;
+            const discountPercentage = product.discountPercentage || 0;
+            const rating = product.rating || 0;
+            const stock = product.stock || 0;
+            const discountedPrice = (price * (1 - discountPercentage/100)).toFixed(2);
             
             let discountInfo = '';
-            if (product.discountPercentage > 0) {
-                discountInfo = `<span style="color: #ff6b6b; font-weight: bold;">Save ${product.discountPercentage.toFixed(1)}%!</span>`;
+            if (discountPercentage > 0) {
+                discountInfo = `<span style="color: #ff6b6b; font-weight: bold;">Save ${discountPercentage.toFixed(1)}%!</span>`;
             }
             
+            // Create a more robust product detail display
             productDetailMessage.innerHTML = `
-                <div style="margin-bottom: 10px;">
-                    ${product.thumbnail ? `<img src="${product.thumbnail}" alt="${product.title}" style="width: 100%; max-height: 200px; object-fit: contain; margin-bottom: 10px; border-radius: 8px;">` : ''}
-                    <strong>${product.title}</strong><br>
-                    <span style="font-size: 0.9em;">${product.description}</span><br>
-                    <div style="margin-top: 5px;">
-                        <strong>$${discountedPrice}</strong> 
-                        ${product.discountPercentage > 0 ? `<span style="color: #666; text-decoration: line-through;">$${product.price.toFixed(2)}</span> ${discountInfo}` : ''}
-                        <br>
-                        <span style="font-size: 0.8em;">Rating: ${product.rating}/5 ⭐ | ${product.stock} in stock</span>
+                <div class="product-detail">
+                    ${product.thumbnail ? 
+                        `<img src="${product.thumbnail}" alt="${title}" class="product-detail-image">` : 
+                        '<div class="no-image">No image available</div>'}
+                    <div class="product-detail-info">
+                        <h3>${title}</h3>
+                        <p class="product-description">${description}</p>
+                        <div class="product-meta">
+                            <div class="product-pricing">
+                                <span class="current-price">$${discountedPrice}</span>
+                                ${discountPercentage > 0 ? 
+                                    `<span class="original-price">$${price.toFixed(2)}</span> ${discountInfo}` : ''}
+                            </div>
+                            <div class="product-stats">
+                                ${rating ? `<span>Rating: ${rating}/5 ⭐</span>` : ''}
+                                ${stock ? `<span>${stock} in stock</span>` : '<span>Out of stock</span>'}
+                            </div>
+                        </div>
+                        
+                        ${product.brand ? `<p class="product-brand">Brand: ${product.brand}</p>` : ''}
+                        ${product.warrantyInformation ? `<p class="product-warranty">Warranty: ${product.warrantyInformation}</p>` : ''}
+                        ${product.shippingInformation ? `<p class="product-shipping">Shipping: ${product.shippingInformation}</p>` : ''}
                     </div>
                 </div>
                 <div class="quick-replies" style="margin-top: 10px;">
@@ -292,6 +599,9 @@
                     </button>
                     <button class="quick-reply-btn">
                         <i class="fas fa-heart"></i> Save for Later
+                    </button>
+                    <button class="quick-reply-btn" onclick="getRelatedProducts('${product.category}', '${product.id}')">
+                        <i class="fas fa-search"></i> Similar Products
                     </button>
                 </div>
             `;
@@ -431,6 +741,66 @@
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
 
+        // Function to show related products from the same category
+        function getRelatedProducts(category, currentProductId) {
+            const messagesContainer = document.querySelector('.chat-messages');
+            
+            // Filter products by category and exclude current product
+            const relatedProducts = allProducts.products.filter(
+                product => product.category === category && product.id != currentProductId
+            );
+            
+            // Create a message for related products
+            const relatedMessage = document.createElement('div');
+            relatedMessage.classList.add('message', 'bot-message');
+            
+            if (relatedProducts.length === 0) {
+                relatedMessage.textContent = `No other ${category} products found.`;
+            } else {
+                relatedMessage.innerHTML = `<strong>You might also like:</strong><br>`;
+                
+                // Create product suggestions container
+                const suggestionsContainer = document.createElement('div');
+                suggestionsContainer.classList.add('product-suggestions');
+                
+                // Show up to 3 related products
+                const suggestedProducts = relatedProducts.slice(0, 3);
+                suggestedProducts.forEach(product => {
+                    // Create a more compact suggestion card
+                    const suggestionCard = document.createElement('div');
+                    suggestionCard.classList.add('product-card');
+                    
+                    // Handle price and discount
+                    const price = product.price || 0;
+                    const discountPercentage = product.discountPercentage || 0;
+                    const discountedPrice = (price * (1 - discountPercentage/100)).toFixed(2);
+                    
+                    suggestionCard.innerHTML = `
+                        <div class="product-image">
+                            ${product.thumbnail ? 
+                                `<img src="${product.thumbnail}" alt="${product.title || 'Product'}">` : 
+                                '<div class="no-image">No image</div>'}
+                        </div>
+                        <div class="product-info">
+                            <h4>${product.title || 'Untitled Product'}</h4>
+                            <p class="product-price">$${discountedPrice}</p>
+                        </div>
+                    `;
+                    
+                    suggestionCard.onclick = function() {
+                        showProductDetails(product);
+                    };
+                    
+                    suggestionsContainer.appendChild(suggestionCard);
+                });
+                
+                relatedMessage.appendChild(suggestionsContainer);
+            }
+            
+            messagesContainer.appendChild(relatedMessage);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
         function toggleChat() {
             const chatContainer = document.querySelector('.chatbot-container');
             const openButton = document.querySelector('.open-chat-btn');
@@ -443,6 +813,198 @@
             } else {
                 chatContainer.style.display = 'none';
             }
+        }
+
+        // Handle chat input submissions
+        document.querySelector('.chat-input button').addEventListener('click', function() {
+            handleChatInput();
+        });
+
+        document.querySelector('.chat-input input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                handleChatInput();
+            }
+        });
+
+        function handleChatInput() {
+            const inputField = document.querySelector('.chat-input input');
+            const userInput = inputField.value.trim();
+            
+            if (!userInput) return;
+            
+            const messagesContainer = document.querySelector('.chat-messages');
+            
+            // Add user message
+            const userMessage = document.createElement('div');
+            userMessage.classList.add('message', 'user-message');
+            userMessage.textContent = userInput;
+            messagesContainer.appendChild(userMessage);
+            
+            // Clear input field
+            inputField.value = '';
+            
+            // Process the input
+            processUserInput(userInput);
+        }
+
+        function processUserInput(input) {
+            const lowercaseInput = input.toLowerCase();
+            
+            // Simple keyword matching for demo purposes
+            if (lowercaseInput.includes('category') || lowercaseInput.includes('browse') || 
+                lowercaseInput.includes('products') || lowercaseInput.includes('shop')) {
+                getCategories();
+            } 
+            else if (lowercaseInput.includes('search') || lowercaseInput.includes('find') || 
+                     lowercaseInput.includes('looking for')) {
+                // Extract search terms by removing common prefixes
+                const searchTerms = lowercaseInput
+                    .replace(/search for|looking for|find|search|show me/gi, '')
+                    .trim();
+                
+                if (searchTerms) {
+                    searchProducts(searchTerms);
+                } else {
+                    // If no clear search terms, ask what they're looking for
+                    showBotMessage("What type of product are you looking for?");
+                }
+            }
+            else if (lowercaseInput.includes('help') || lowercaseInput.includes('faq')) {
+                window.location.href = 'faq';
+            }
+            else if (lowercaseInput.includes('json') || lowercaseInput.includes('data')) {
+                downloadProductsJSON();
+            }
+            else {
+                // Default response
+                searchProducts(input);
+            }
+        }
+
+        // Search products based on user input
+        function searchProducts(query) {
+            if (!allProducts) {
+                showErrorMessage("Product data is still loading. Please try again in a moment.");
+                return;
+            }
+            
+            const messagesContainer = document.querySelector('.chat-messages');
+            
+            // Create loading message
+            const loadingMessage = document.createElement('div');
+            loadingMessage.classList.add('message', 'bot-message');
+            loadingMessage.textContent = `Searching for "${query}"...`;
+            messagesContainer.appendChild(loadingMessage);
+            
+            setTimeout(() => {
+                // Remove loading message
+                messagesContainer.removeChild(loadingMessage);
+                
+                // Search in product titles, descriptions, and categories
+                const results = allProducts.products.filter(product => {
+                    // Handle potential missing data
+                    const title = (product.title || '').toLowerCase();
+                    const description = (product.description || '').toLowerCase();
+                    const category = (product.category || '').toLowerCase();
+                    const brand = (product.brand || '').toLowerCase();
+                    
+                    return title.includes(query.toLowerCase()) || 
+                           description.includes(query.toLowerCase()) ||
+                           category.includes(query.toLowerCase()) ||
+                           brand.includes(query.toLowerCase());
+                });
+                
+                if (results.length > 0) {
+                    // Create results message
+                    const resultsMessage = document.createElement('div');
+                    resultsMessage.classList.add('message', 'bot-message');
+                    resultsMessage.innerHTML = `<strong>I found ${results.length} products matching "${query}":</strong><br>`;
+                    
+                    const productListContainer = document.createElement('div');
+                    productListContainer.classList.add('product-list', 'product-suggestions');
+                    
+                    // Show first 5 results
+                    results.slice(0, 5).forEach(product => {
+                        const productItem = document.createElement('div');
+                        productItem.classList.add('product-card');
+                        
+                        // Handle price and discount with error checking
+                        const price = product.price || 0;
+                        const discountPercentage = product.discountPercentage || 0;
+                        const discountedPrice = (price * (1 - discountPercentage/100)).toFixed(2);
+                        
+                        productItem.innerHTML = `
+                            <div class="product-image">
+                                ${product.thumbnail ? 
+                                    `<img src="${product.thumbnail}" alt="${product.title || 'Product'}">` : 
+                                    '<div class="no-image">No image</div>'}
+                            </div>
+                            <div class="product-info">
+                                <h4>${product.title || 'Untitled Product'}</h4>
+                                <div class="product-price">$${discountedPrice}</div>
+                            </div>
+                        `;
+                        
+                        productItem.onclick = function() {
+                            showProductDetails(product);
+                        };
+                        
+                        productListContainer.appendChild(productItem);
+                    });
+                    
+                    resultsMessage.appendChild(productListContainer);
+                    
+                    if (results.length > 5) {
+                        const showMoreButton = document.createElement('button');
+                        showMoreButton.textContent = 'Show More Results';
+                        showMoreButton.classList.add('quick-reply-btn');
+                        
+                        showMoreButton.onclick = function() {
+                            // Show all search results
+                            showAllSearchResults(query, results);
+                        };
+                        
+                        resultsMessage.appendChild(showMoreButton);
+                    }
+                    
+                    messagesContainer.appendChild(resultsMessage);
+                } else {
+                    // No results found
+                    const noResultsMessage = document.createElement('div');
+                    noResultsMessage.classList.add('message', 'bot-message');
+                    noResultsMessage.innerHTML = `I couldn't find any products matching "${query}". Would you like to browse by category instead?<br><br>
+                        <button class="quick-reply-btn" onclick="getCategories()">
+                            <i class="fas fa-list"></i> Browse Categories
+                        </button>`;
+                    
+                    messagesContainer.appendChild(noResultsMessage);
+                }
+                
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }, 800);
+        }
+
+        // Helper function to display a simple bot message
+        function showBotMessage(message) {
+            const messagesContainer = document.querySelector('.chat-messages');
+            const botMessage = document.createElement('div');
+            botMessage.classList.add('message', 'bot-message');
+            botMessage.textContent = message;
+            messagesContainer.appendChild(botMessage);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function addRetryButton() {
+            const messagesContainer = document.querySelector('.chat-messages');
+            const retryMessage = document.createElement('div');
+            retryMessage.classList.add('message', 'bot-message');
+            retryMessage.innerHTML = `
+                Unable to load products. 
+                <button class="quick-reply-btn" onclick="preloadProductData()">
+                    <i class="fas fa-sync"></i> Retry Loading
+                </button>
+            `;
+            messagesContainer.appendChild(retryMessage);
         }
     </script>
 </body>
