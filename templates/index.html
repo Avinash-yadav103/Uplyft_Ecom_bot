@@ -97,6 +97,11 @@
         let loadingAttempts = 0;
         const MAX_LOADING_ATTEMPTS = 3;
 
+        // Add cart related variables
+        let cart = [];
+        let cartItemCount = 0;
+        let cartTotal = 0;
+
         // Preload products as soon as the page loads
         document.addEventListener('DOMContentLoaded', function() {
             preloadProductData();
@@ -665,224 +670,440 @@
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
 
-        // Add to Cart functionality
+        // Updated addToCart function that actually adds products to a cart
         function addToCart(productId) {
+            if (!allProducts) {
+                showErrorMessage("Product data is still loading. Please try again in a moment.");
+                return;
+            }
+            
+            // Find the product in the products data
+            const product = allProducts.products.find(p => p.id == productId);
+            
+            if (!product) {
+                showErrorMessage("Sorry, I couldn't find that product.");
+                return;
+            }
+            
+            // Check if product is already in cart
+            const existingItem = cart.find(item => item.id == productId);
+            
+            if (existingItem) {
+                // Increment quantity if already in cart
+                existingItem.quantity += 1;
+            } else {
+                // Add new item to cart
+                cart.push({
+                    id: product.id,
+                    title: product.title || 'Unknown Product',
+                    price: product.price || 0,
+                    discountPercentage: product.discountPercentage || 0,
+                    thumbnail: product.thumbnail || null,
+                    quantity: 1
+                });
+            }
+            
+            // Update cart count and total
+            updateCartCountAndTotal();
+            
+            // Show confirmation message with view cart option
             const messagesContainer = document.querySelector('.chat-messages');
             const confirmationMessage = document.createElement('div');
             confirmationMessage.classList.add('message', 'bot-message');
-            confirmationMessage.innerHTML = `Product added to cart! <a href="#">View Cart</a>`;
+            confirmationMessage.innerHTML = `
+                <div class="cart-confirmation">
+                    <p>Added to cart: ${product.title || 'Product'}</p>
+                    <div class="cart-actions">
+                        <button class="quick-reply-btn" onclick="continueShoppingAfterAdd()">
+                            <i class="fas fa-shopping-bag"></i> Continue Shopping
+                        </button>
+                        <button class="quick-reply-btn" onclick="viewCart()">
+                            <i class="fas fa-shopping-cart"></i> View Cart (${cartItemCount})
+                        </button>
+                    </div>
+                </div>
+            `;
             messagesContainer.appendChild(confirmationMessage);
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            // Update the cart icon in the header
+            updateCartIcon();
         }
 
-        // Function to handle JSON downloading - keep the existing one
-        function downloadProductsJSON() {
-            const messagesContainer = document.querySelector('.chat-messages');
+        // Function to update cart count and total
+        function updateCartCountAndTotal() {
+            cartItemCount = cart.reduce((total, item) => total + item.quantity, 0);
+            cartTotal = cart.reduce((total, item) => {
+                const discountedPrice = item.price * (1 - item.discountPercentage/100);
+                return total + (discountedPrice * item.quantity);
+            }, 0);
+        }
+
+        // Function to update the cart icon
+        function updateCartIcon() {
+            // Check if cart icon exists, if not create it
+            let cartIcon = document.querySelector('.cart-icon');
             
-            // Show user request in chat
-            const userMessage = document.createElement('div');
-            userMessage.classList.add('message', 'user-message');
-            userMessage.textContent = "I need the product data as JSON";
-            messagesContainer.appendChild(userMessage);
-            
-            // Show loading message
-            const loadingMessage = document.createElement('div');
-            loadingMessage.classList.add('message', 'bot-message');
-            loadingMessage.textContent = "Fetching product data for you...";
-            messagesContainer.appendChild(loadingMessage);
-            
-            // Create download from local data
-            if (allProducts) {
-                setTimeout(() => {
-                    messagesContainer.removeChild(loadingMessage);
-                    
-                    // Create a JSON blob from the data
-                    const jsonData = JSON.stringify(allProducts, null, 2);
-                    const blob = new Blob([jsonData], { type: 'application/json' });
-                    
-                    // Create a URL for the blob
-                    const url = URL.createObjectURL(blob);
-                    
-                    // Add download message and button to the chat
-                    const downloadMessage = document.createElement('div');
-                    downloadMessage.classList.add('message', 'bot-message');
-                    
-                    // Create download link
-                    const downloadLink = document.createElement('a');
-                    downloadLink.href = url;
-                    downloadLink.download = 'products.json';
-                    downloadLink.className = 'quick-reply-btn';
-                    downloadLink.innerHTML = '<i class="fas fa-download"></i> Download Products JSON';
-                    downloadLink.style.display = 'inline-block';
-                    downloadLink.style.textDecoration = 'none';
-                    downloadLink.style.margin = '10px 0';
-                    
-                    downloadMessage.innerHTML = 'I\'ve fetched the product data for you. Click below to download:';
-                    downloadMessage.appendChild(document.createElement('br'));
-                    downloadMessage.appendChild(downloadLink);
-                    
-                    messagesContainer.appendChild(downloadMessage);
-                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                    
-                    // Clean up the URL object after download
-                    downloadLink.addEventListener('click', () => {
-                        setTimeout(() => {
-                            URL.revokeObjectURL(url);
-                        }, 100);
-                    });
-                }, 1000);
-            } else {
-                loadProductsData().then(() => {
-                    downloadProductsJSON();
-                });
+            if (!cartIcon) {
+                // Create cart icon in header
+                const nav = document.querySelector('nav ul');
+                const cartLi = document.createElement('li');
+                cartLi.classList.add('cart-icon-container');
+                cartLi.innerHTML = `
+                    <a href="#" onclick="viewCart(); return false;" class="cart-icon">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span class="cart-count">0</span>
+                    </a>
+                `;
+                nav.appendChild(cartLi);
+                
+                // Add styles for cart icon
+                const style = document.createElement('style');
+                style.textContent = `
+                    .cart-icon-container {
+                        position: relative;
+                    }
+                    .cart-icon {
+                        display: flex;
+                        align-items: center;
+                    }
+                    .cart-count {
+                        position: absolute;
+                        top: -8px;
+                        right: -8px;
+                        background-color: #ff6b6b;
+                        color: white;
+                        border-radius: 50%;
+                        width: 20px;
+                        height: 20px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 12px;
+                        font-weight: bold;
+                    }
+                    .cart-empty {
+                        display: none;
+                    }
+                    .cart-table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin-top: 15px;
+                        margin-bottom: 15px;
+                    }
+                    .cart-table th, .cart-table td {
+                        padding: 8px;
+                        text-align: left;
+                        border-bottom: 1px solid #ddd;
+                    }
+                    .cart-table th {
+                        background-color: #f5f5f5;
+                    }
+                    .cart-product {
+                        display: flex;
+                        align-items: center;
+                    }
+                    .cart-product img {
+                        width: 40px;
+                        height: 40px;
+                        object-fit: cover;
+                        margin-right: 10px;
+                        border-radius: 4px;
+                    }
+                    .quantity-control {
+                        display: flex;
+                        align-items: center;
+                    }
+                    .quantity-control button {
+                        width: 25px;
+                        height: 25px;
+                        border: 1px solid #ddd;
+                        background: white;
+                        font-weight: bold;
+                        cursor: pointer;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                    }
+                    .quantity-control span {
+                        margin: 0 8px;
+                    }
+                    .cart-summary {
+                        margin-top: 15px;
+                        padding: 15px;
+                        background-color: #f9f9f9;
+                        border-radius: 8px;
+                    }
+                    .cart-total {
+                        font-size: 18px;
+                        font-weight: bold;
+                        margin-bottom: 10px;
+                    }
+                    .checkout-button {
+                        background-color: #4CAF50;
+                        color: white;
+                        border: none;
+                        padding: 10px 20px;
+                        border-radius: 4px;
+                        cursor: pointer;
+                        font-weight: bold;
+                        transition: background-color 0.2s;
+                    }
+                    .checkout-button:hover {
+                        background-color: #45a049;
+                    }
+                    .empty-cart-message {
+                        text-align: center;
+                        margin: 20px 0;
+                        color: #666;
+                    }
+                    .remove-btn {
+                        color: #ff6b6b;
+                        cursor: pointer;
+                        background: none;
+                        border: none;
+                        font-size: 16px;
+                    }
+                `;
+                document.head.appendChild(style);
+                
+                cartIcon = document.querySelector('.cart-icon');
             }
             
-            // Scroll to bottom
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-
-        // Function to show related products from the same category
-        function getRelatedProducts(category, currentProductId) {
-            const messagesContainer = document.querySelector('.chat-messages');
-            
-            // Filter products by category and exclude current product
-            const relatedProducts = allProducts.products.filter(
-                product => product.category === category && product.id != currentProductId
-            );
-            
-            // Create a message for related products
-            const relatedMessage = document.createElement('div');
-            relatedMessage.classList.add('message', 'bot-message');
-            
-            if (relatedProducts.length === 0) {
-                relatedMessage.textContent = `No other ${category} products found.`;
-            } else {
-                relatedMessage.innerHTML = `<strong>You might also like:</strong><br>`;
+            // Update cart count
+            const cartCountElement = document.querySelector('.cart-count');
+            if (cartCountElement) {
+                cartCountElement.textContent = cartItemCount;
                 
-                // Create product suggestions container
-                const suggestionsContainer = document.createElement('div');
-                suggestionsContainer.classList.add('product-suggestions');
-                
-                // Show up to 3 related products
-                const suggestedProducts = relatedProducts.slice(0, 3);
-                suggestedProducts.forEach(product => {
-                    // Create a more compact suggestion card
-                    const suggestionCard = document.createElement('div');
-                    suggestionCard.classList.add('product-card');
-                    
-                    // Handle price and discount
-                    const price = product.price || 0;
-                    const discountPercentage = product.discountPercentage || 0;
-                    const discountedPrice = (price * (1 - discountPercentage/100)).toFixed(2);
-                    
-                    suggestionCard.innerHTML = `
-                        <div class="product-image">
-                            ${product.thumbnail ? 
-                                `<img src="${product.thumbnail}" alt="${product.title || 'Product'}">` : 
-                                '<div class="no-image">No image</div>'}
-                        </div>
-                        <div class="product-info">
-                            <h4>${product.title || 'Untitled Product'}</h4>
-                            <p class="product-price">$${discountedPrice}</p>
-                        </div>
-                    `;
-                    
-                    suggestionCard.onclick = function() {
-                        showProductDetails(product);
-                    };
-                    
-                    suggestionsContainer.appendChild(suggestionCard);
-                });
-                
-                relatedMessage.appendChild(suggestionsContainer);
-            }
-            
-            messagesContainer.appendChild(relatedMessage);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-
-        function toggleChat() {
-            const chatContainer = document.querySelector('.chatbot-container');
-            const openButton = document.querySelector('.open-chat-btn');
-            
-            if (chatContainer.style.display === 'none' || !chatContainer.style.display) {
-                chatContainer.style.display = 'block';
-                if (!allProducts) {
-                    loadProductsData();
+                // Show/hide count based on whether cart has items
+                if (cartItemCount > 0) {
+                    cartCountElement.classList.remove('cart-empty');
+                } else {
+                    cartCountElement.classList.add('cart-empty');
                 }
-            } else {
-                chatContainer.style.display = 'none';
             }
         }
 
-        // Handle chat input submissions
-        document.querySelector('.chat-input button').addEventListener('click', function() {
-            handleChatInput();
-        });
-
-        document.querySelector('.chat-input input').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                handleChatInput();
-            }
-        });
-
-        function handleChatInput() {
-            const inputField = document.querySelector('.chat-input input');
-            const userInput = inputField.value.trim();
-            
-            if (!userInput) return;
-            
+        // Function to view the cart contents
+        function viewCart() {
             const messagesContainer = document.querySelector('.chat-messages');
             
             // Add user message
             const userMessage = document.createElement('div');
             userMessage.classList.add('message', 'user-message');
-            userMessage.textContent = userInput;
+            userMessage.textContent = "Show my shopping cart";
             messagesContainer.appendChild(userMessage);
             
-            // Clear input field
-            inputField.value = '';
+            // Create cart view message
+            const cartMessage = document.createElement('div');
+            cartMessage.classList.add('message', 'bot-message');
             
-            // Process the input
-            processUserInput(userInput);
-        }
-
-        function processUserInput(input) {
-            const lowercaseInput = input.toLowerCase();
-            
-            // Simple keyword matching for demo purposes
-            if (lowercaseInput.includes('category') || lowercaseInput.includes('browse') || 
-                lowercaseInput.includes('products') || lowercaseInput.includes('shop')) {
-                getCategories();
-            } 
-            else if (lowercaseInput.includes('search') || lowercaseInput.includes('find') || 
-                     lowercaseInput.includes('looking for')) {
-                // Extract search terms by removing common prefixes
-                const searchTerms = lowercaseInput
-                    .replace(/search for|looking for|find|search|show me/gi, '')
-                    .trim();
+            if (cart.length === 0) {
+                // Empty cart message
+                cartMessage.innerHTML = `
+                    <div class="empty-cart-message">
+                        <i class="fas fa-shopping-cart" style="font-size: 36px; color: #ddd; margin-bottom: 10px;"></i>
+                        <p>Your cart is empty</p>
+                        <button class="quick-reply-btn" onclick="getCategories()">
+                            <i class="fas fa-shopping-bag"></i> Start Shopping
+                        </button>
+                    </div>
+                `;
+            } else {
+                // Cart with items
+                cartMessage.innerHTML = `<strong>Your Shopping Cart:</strong>`;
                 
-                if (searchTerms) {
-                    searchProducts(searchTerms);
-                } else {
-                    // If no clear search terms, ask what they're looking for
-                    showBotMessage("What type of product are you looking for?");
-                }
+                // Create cart table
+                const cartTable = document.createElement('table');
+                cartTable.classList.add('cart-table');
+                
+                // Add table header
+                cartTable.innerHTML = `
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Price</th>
+                            <th>Quantity</th>
+                            <th>Total</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="cart-items">
+                    </tbody>
+                `;
+                
+                const cartBody = cartTable.querySelector('#cart-items');
+                
+                // Add items to table
+                cart.forEach(item => {
+                    const discountedPrice = (item.price * (1 - item.discountPercentage/100)).toFixed(2);
+                    const itemTotal = (discountedPrice * item.quantity).toFixed(2);
+                    
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>
+                            <div class="cart-product">
+                                ${item.thumbnail ? 
+                                    `<img src="${item.thumbnail}" alt="${item.title}">` : 
+                                    '<div class="no-image" style="width:40px;height:40px;background:#eee;"></div>'}
+                                <div>${item.title}</div>
+                            </div>
+                        </td>
+                        <td>$${discountedPrice}</td>
+                        <td>
+                            <div class="quantity-control">
+                                <button onclick="updateCartItemQuantity(${item.id}, -1)">-</button>
+                                <span>${item.quantity}</span>
+                                <button onclick="updateCartItemQuantity(${item.id}, 1)">+</button>
+                            </div>
+                        </td>
+                        <td>$${itemTotal}</td>
+                        <td><button class="remove-btn" onclick="removeFromCart(${item.id})"><i class="fas fa-trash"></i></button></td>
+                    `;
+                    
+                    cartBody.appendChild(row);
+                });
+                
+                cartMessage.appendChild(cartTable);
+                
+                // Add cart summary
+                const cartSummary = document.createElement('div');
+                cartSummary.classList.add('cart-summary');
+                cartSummary.innerHTML = `
+                    <div class="cart-total">Total: $${cartTotal.toFixed(2)}</div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="checkout-button" onclick="proceedToCheckout()">
+                            <i class="fas fa-credit-card"></i> Checkout
+                        </button>
+                        <button class="quick-reply-btn" onclick="clearCart()">
+                            <i class="fas fa-trash"></i> Clear Cart
+                        </button>
+                        <button class="quick-reply-btn" onclick="continueShopping()">
+                            <i class="fas fa-arrow-left"></i> Continue Shopping
+                        </button>
+                    </div>
+                `;
+                
+                cartMessage.appendChild(cartSummary);
             }
-            else if (lowercaseInput.includes('help') || lowercaseInput.includes('faq')) {
-                window.location.href = 'faq';
-            }
-            else if (lowercaseInput.includes('json') || lowercaseInput.includes('data')) {
-                downloadProductsJSON();
-            }
-            else {
-                // Default response
-                searchProducts(input);
-            }
+            
+            messagesContainer.appendChild(cartMessage);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
 
-        // Search products based on user input
-        function searchProducts(query) {
+        // Function to update item quantity in cart
+        function updateCartItemQuantity(productId, change) {
+            const item = cart.find(item => item.id == productId);
+            if (!item) return;
+            
+            item.quantity += change;
+            
+            // Remove item if quantity becomes 0 or less
+            if (item.quantity <= 0) {
+                removeFromCart(productId);
+                return;
+            }
+            
+            // Update cart count and total
+            updateCartCountAndTotal();
+            updateCartIcon();
+            
+            // Refresh cart view
+            viewCart();
+        }
+
+        // Function to remove item from cart
+        function removeFromCart(productId) {
+            cart = cart.filter(item => item.id != productId);
+            
+            // Update cart count and total
+            updateCartCountAndTotal();
+            updateCartIcon();
+            
+            // Refresh cart view
+            viewCart();
+        }
+
+        // Function to clear the entire cart
+        function clearCart() {
+            cart = [];
+            updateCartCountAndTotal();
+            updateCartIcon();
+            
+            // Show empty cart
+            viewCart();
+        }
+
+        // Function to continue shopping
+        function continueShopping() {
+            const messagesContainer = document.querySelector('.chat-messages');
+            
+            const botMessage = document.createElement('div');
+            botMessage.classList.add('message', 'bot-message');
+            botMessage.innerHTML = `
+                What would you like to shop for?
+                <div style="margin-top: 10px;">
+                    <button class="quick-reply-btn" onclick="getCategories()">
+                        <i class="fas fa-list"></i> Browse Categories
+                    </button>
+                    <button class="quick-reply-btn" onclick="showPopularProducts()">
+                        <i class="fas fa-fire"></i> Popular Items
+                    </button>
+                </div>
+            `;
+            
+            messagesContainer.appendChild(botMessage);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Continue shopping after adding to cart
+        function continueShoppingAfterAdd() {
+            continueShoppingbotMessage("Item added to your cart! What else would you like to shop for?");
+        }
+
+        // Function to proceed to checkout
+        function proceedToCheckout() {
+            const messagesContainer = document.querySelector('.chat-messages');
+            
+            const checkoutMessage = document.createElement('div');
+            checkoutMessage.classList.add('message', 'bot-message');
+            checkoutMessage.innerHTML = `
+                <div style="text-align: center;">
+                    <i class="fas fa-check-circle" style="font-size: 36px; color: #4CAF50; margin-bottom: 10px;"></i>
+                    <h3>Thank you for your order!</h3>
+                    <p>Your order has been placed successfully.</p>
+                    <p>Order #: ${Math.floor(Math.random() * 100000)}</p>
+                    <p>Total: $${cartTotal.toFixed(2)}</p>
+                    <p style="margin-top: 15px;">A confirmation email has been sent to your registered email address.</p>
+                    <button class="quick-reply-btn" onclick="finishCheckout()">
+                        <i class="fas fa-thumbs-up"></i> Got it!
+                    </button>
+                </div>
+            `;
+            
+            messagesContainer.appendChild(checkoutMessage);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            // Clear cart after successful checkout
+            cart = [];
+            updateCartCountAndTotal();
+            updateCartIcon();
+        }
+
+        // Function after checkout is complete
+        function finishCheckout() {
+            const messagesContainer = document.querySelector('.chat-messages');
+            
+            const thankYouMessage = document.createElement('div');
+            thankYouMessage.classList.add('message', 'bot-message');
+            thankYouMessage.textContent = "Thanks for shopping with us! Is there anything else I can help you with?";
+            
+            messagesContainer.appendChild(thankYouMessage);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Function to show popular products (optional feature)
+        function showPopularProducts() {
             if (!allProducts) {
                 showErrorMessage("Product data is still loading. Please try again in a moment.");
                 return;
@@ -893,119 +1114,73 @@
             // Create loading message
             const loadingMessage = document.createElement('div');
             loadingMessage.classList.add('message', 'bot-message');
-            loadingMessage.textContent = `Searching for "${query}"...`;
+            loadingMessage.textContent = "Finding popular products...";
             messagesContainer.appendChild(loadingMessage);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
             
             setTimeout(() => {
                 // Remove loading message
                 messagesContainer.removeChild(loadingMessage);
                 
-                // Search in product titles, descriptions, and categories
-                const results = allProducts.products.filter(product => {
-                    // Handle potential missing data
-                    const title = (product.title || '').toLowerCase();
-                    const description = (product.description || '').toLowerCase();
-                    const category = (product.category || '').toLowerCase();
-                    const brand = (product.brand || '').toLowerCase();
-                    
-                    return title.includes(query.toLowerCase()) || 
-                           description.includes(query.toLowerCase()) ||
-                           category.includes(query.toLowerCase()) ||
-                           brand.includes(query.toLowerCase());
-                });
+                // Sort products by rating and get top rated
+                const popularProducts = [...allProducts.products]
+                    .filter(product => product.rating)
+                    .sort((a, b) => b.rating - a.rating)
+                    .slice(0, 5);
                 
-                if (results.length > 0) {
-                    // Create results message
-                    const resultsMessage = document.createElement('div');
-                    resultsMessage.classList.add('message', 'bot-message');
-                    resultsMessage.innerHTML = `<strong>I found ${results.length} products matching "${query}":</strong><br>`;
-                    
-                    const productListContainer = document.createElement('div');
-                    productListContainer.classList.add('product-list', 'product-suggestions');
-                    
-                    // Show first 5 results
-                    results.slice(0, 5).forEach(product => {
-                        const productItem = document.createElement('div');
-                        productItem.classList.add('product-card');
-                        
-                        // Handle price and discount with error checking
-                        const price = product.price || 0;
-                        const discountPercentage = product.discountPercentage || 0;
-                        const discountedPrice = (price * (1 - discountPercentage/100)).toFixed(2);
-                        
-                        productItem.innerHTML = `
-                            <div class="product-image">
-                                ${product.thumbnail ? 
-                                    `<img src="${product.thumbnail}" alt="${product.title || 'Product'}">` : 
-                                    '<div class="no-image">No image</div>'}
-                            </div>
-                            <div class="product-info">
-                                <h4>${product.title || 'Untitled Product'}</h4>
-                                <div class="product-price">$${discountedPrice}</div>
-                            </div>
-                        `;
-                        
-                        productItem.onclick = function() {
-                            showProductDetails(product);
-                        };
-                        
-                        productListContainer.appendChild(productItem);
-                    });
-                    
-                    resultsMessage.appendChild(productListContainer);
-                    
-                    if (results.length > 5) {
-                        const showMoreButton = document.createElement('button');
-                        showMoreButton.textContent = 'Show More Results';
-                        showMoreButton.classList.add('quick-reply-btn');
-                        
-                        showMoreButton.onclick = function() {
-                            // Show all search results
-                            showAllSearchResults(query, results);
-                        };
-                        
-                        resultsMessage.appendChild(showMoreButton);
-                    }
-                    
-                    messagesContainer.appendChild(resultsMessage);
-                } else {
-                    // No results found
-                    const noResultsMessage = document.createElement('div');
-                    noResultsMessage.classList.add('message', 'bot-message');
-                    noResultsMessage.innerHTML = `I couldn't find any products matching "${query}". Would you like to browse by category instead?<br><br>
-                        <button class="quick-reply-btn" onclick="getCategories()">
-                            <i class="fas fa-list"></i> Browse Categories
-                        </button>`;
-                    
-                    messagesContainer.appendChild(noResultsMessage);
+                if (popularProducts.length === 0) {
+                    showBotMessage("Sorry, I couldn't find any popular products right now.");
+                    return;
                 }
                 
+                // Display popular products
+                const productsMessage = document.createElement('div');
+                productsMessage.classList.add('message', 'bot-message');
+                productsMessage.innerHTML = "<strong>Our Top Rated Products:</strong><br>";
+                
+                const productList = document.createElement('div');
+                productList.classList.add('product-list', 'product-suggestions');
+                
+                popularProducts.forEach(product => {
+                    // Create a product card
+                    const productItem = document.createElement('div');
+                    productItem.classList.add('product-card');
+                    
+                    // Calculate discount
+                    const price = product.price || 0;
+                    const discountPercentage = product.discountPercentage || 0;
+                    const discountedPrice = (price * (1 - discountPercentage/100)).toFixed(2);
+                    
+                    productItem.innerHTML = `
+                        <div class="product-image">
+                            ${product.thumbnail ? 
+                                `<img src="${product.thumbnail}" alt="${product.title || 'Product'}">` : 
+                                '<div class="no-image">No image</div>'}
+                        </div>
+                        <div class="product-info">
+                            <h4>${product.title || 'Untitled Product'}</h4>
+                            <div>Rating: ${product.rating.toFixed(1)} ⭐</div>
+                            <div class="product-price">$${discountedPrice}</div>
+                        </div>
+                    `;
+                    
+                    productItem.onclick = function() {
+                        showProductDetails(product);
+                    };
+                    
+                    productList.appendChild(productItem);
+                });
+                
+                productsMessage.appendChild(productList);
+                messagesContainer.appendChild(productsMessage);
                 messagesContainer.scrollTop = messagesContainer.scrollHeight;
             }, 800);
         }
 
-        // Helper function to display a simple bot message
-        function showBotMessage(message) {
-            const messagesContainer = document.querySelector('.chat-messages');
-            const botMessage = document.createElement('div');
-            botMessage.classList.add('message', 'bot-message');
-            botMessage.textContent = message;
-            messagesContainer.appendChild(botMessage);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-
-        function addRetryButton() {
-            const messagesContainer = document.querySelector('.chat-messages');
-            const retryMessage = document.createElement('div');
-            retryMessage.classList.add('message', 'bot-message');
-            retryMessage.innerHTML = `
-                Unable to load products. 
-                <button class="quick-reply-btn" onclick="preloadProductData()">
-                    <i class="fas fa-sync"></i> Retry Loading
-                </button>
-            `;
-            messagesContainer.appendChild(retryMessage);
-        }
+        // Initialize cart icon on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateCartIcon();
+        });
     </script>
 </body>
 </html>
