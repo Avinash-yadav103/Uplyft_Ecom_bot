@@ -134,7 +134,7 @@ main {
   bottom: 20px;
   right: 20px;
   width: 1000px;
-  height: 840px;
+  height: 700px; /* Reduced from 840px to 700px */
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 5px 25px rgba(0, 0, 0, 0.2);
@@ -228,6 +228,7 @@ main {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  height: 1200px;
 }
 
 .message {
@@ -286,8 +287,10 @@ main {
 /* Chat input area */
 .chat-input {
   border-top: 1px solid #f0f0f0;
-  padding: 12px 16px;
+  padding: 8px 16px; /* Reduced padding from 12px to 8px */
   background-color: #fff;
+  display: flex; /* Added to align input and button properly */
+  align-items: center;
 }
 
 .chat-input input {
@@ -295,16 +298,7 @@ main {
   outline: none;
   width: 100%;
   font-size: 0.95rem;
-  padding: 8px 0;
-}
-
-.chat-input button {
-  background-color: transparent;
-  color: #0084ff;
-  border: none;
-  padding: 0 8px;
-  font-size: 1.2rem;
-  cursor: pointer;
+  padding: 6px 0; /* Reduced padding from 8px to 6px */
 }
 
 /* User profile sidebar */

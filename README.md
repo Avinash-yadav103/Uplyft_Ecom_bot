@@ -1,60 +1,58 @@
 # ShopAssist – AI-Powered E-commerce Chatbot
 
-ShopAssist is a modern, AI-powered e-commerce chatbot web application. It helps users discover products, browse categories, manage their shopping cart, and get instant support—all through a conversational interface. The project demonstrates a full-stack approach using Flask, HTML/CSS/JS, and integration with Microsoft Power Platform for AI search.
+ShopAssist is a modern, AI-powered e-commerce chatbot web application. It enables users to discover products, browse categories, manage their shopping cart, and get instant support—all through a conversational interface. The project demonstrates a full-stack approach using Flask (Python), HTML/CSS/JS, and integration with Microsoft Power Platform Copilot Studio for AI-powered product search.
 
 ---
+
+## Project Summary
+
+ShopAssist is designed to provide a seamless and interactive shopping experience using conversational AI. The application consists of a Flask backend serving a responsive frontend, with the following core features:
+
+- **Conversational Shopping**: Users interact with a chatbot UI to search for products, get recommendations, and receive support.
+- **AI-Powered Search**: Natural language queries are processed using Microsoft Power Platform Copilot Studio, allowing users to search for products just by describing what they want (e.g., "Show me waterproof watches under $100").
+- **Product Browsing**: Users can browse products by category, view product details, and add items to their cart.
+- **Shopping Cart Management**: Add, remove, and update items in the cart, with a clear checkout flow.
+- **Deals & Promotions**: Special offers and discounts are highlighted within the chat interface.
+- **FAQ & Support**: Access help and support via a dedicated FAQ page and chatbot responses.
+- **Accessibility**: The UI is designed for keyboard navigation, screen readers, and high color contrast for readability.
+
+### How It Works
+
+1. **Backend (Flask)**: Handles API endpoints for product data, chat interactions, and serves the frontend templates.
+2. **Frontend (HTML/CSS/JS)**: Provides a modern, responsive chat interface for users to interact with the bot and browse products.
+3. **AI Integration**: User queries are sent to Microsoft Power Platform Copilot Studio for intelligent product search. If the AI service is unavailable, the app falls back to local search using a sample `products.json` file.
+4. **Data Handling**: Product data is loaded from `static/products.json` or fetched from [DummyJSON](https://dummyjson.com/products) as a fallback.
+
+---
+
+## Key Features
+
+- **Browse Products**: Users can explore products by category, view details, and add items to their cart directly from the chat interface.
+- **Search with AI**: By leveraging Copilot Studio, users can type natural language queries to find products (e.g., "Find me red running shoes for women").
+- **Cart Management**: The chatbot supports adding, removing, and updating cart items, with a summary and checkout option.
+- **Instant Support**: The FAQ page and chatbot provide quick answers to common questions and support requests.
+- **Accessibility**: Designed for all users, with keyboard and screen reader support, and high-contrast UI.
+
+---
+
+![alt text](image.png)
 
 ## Table of Contents
 
 - [ShopAssist – AI-Powered E-commerce Chatbot](#shopassist--ai-powered-e-commerce-chatbot)
+  - [Project Summary](#project-summary)
+    - [How It Works](#how-it-works)
+  - [Key Features](#key-features)
   - [Table of Contents](#table-of-contents)
-  - [Features](#features)
-  - [Project Structure](#project-structure)
   - [Installation \& Setup](#installation--setup)
     - [Prerequisites](#prerequisites)
     - [Steps](#steps)
   - [Running the Application](#running-the-application)
   - [Usage Guide](#usage-guide)
   - [Dummy Data](#dummy-data)
-  - [AI Integration](#ai-integration)
+  - [AI Integration (Copilot Studio)](#ai-integration-copilot-studio)
   - [Accessibility](#accessibility)
-  - [Development \& Testing](#development--testing)
   - [License](#license)
-
----
-
-## Features
-
-- **Conversational Shopping**: Chatbot interface for product discovery and support
-- **AI-Powered Search**: Natural language product search via Microsoft Power Platform
-- **Category Browsing**: Browse and filter products by category
-- **Shopping Cart**: Add, remove, and update items in your cart
-- **Deals & Promotions**: View special offers and discounts
-- **FAQ & Support**: Access help and contact support
-- **Responsive & Accessible**: Works on all devices, with keyboard and screen reader support
-
----
-
-## Project Structure
-
-```
-Uplyft/
-├── static/
-│   ├── css/
-│   │   └── style.css         # Main stylesheet
-│   ├── js/
-│   │   └── script.js         # Client-side JavaScript
-│   └── products.json         # Dummy product data (local fallback)
-├── templates/
-│   ├── index.html            # Main chatbot UI
-│   └── faq.html              # FAQ/help page
-├── index.py                  # Flask backend application
-├── requirements.txt          # Python dependencies
-├── README.md                 # Project documentation
-├── points.txt                # (Sample/bonus file)
-├── vercel.json               # (Deployment config, if using Vercel)
-└── Uplyft Full Stack Intern Case Study_Internshala June 2025.pdf
-```
 
 ---
 
@@ -87,17 +85,45 @@ Uplyft/
    pip install -r requirements.txt
    ```
 
----
-
-## Running the Application
-
-1. **Start the Flask server**
+4. **Start the Flask server**
 
    ```powershell
    python index.py
    ```
 
-2. **Open your browser** and go to [http://127.0.0.1:5000/](http://127.0.0.1:5000/)
+5. **Open your browser** and go to [http://127.0.0.1:5000/](http://127.0.0.1:5000/)
+
+---
+
+## Running the Application
+
+1. **Clone the repository**
+
+   ```powershell
+   git clone <your-repo-url>
+   cd Uplyft
+   ```
+
+2. **Create a virtual environment (recommended)**
+
+   ```powershell
+   python -m venv venv
+   .\venv\Scripts\activate
+   ```
+
+3. **Install dependencies**
+
+   ```powershell
+   pip install -r requirements.txt
+   ```
+
+4. **Start the Flask server**
+
+   ```powershell
+   python index.py
+   ```
+
+5. **Open your browser** and go to [http://127.0.0.1:5000/](http://127.0.0.1:5000/)
 
 ---
 
@@ -141,7 +167,7 @@ Uplyft/
 
 ---
 
-## AI Integration
+## AI Integration (Copilot Studio)
 
 - **AI Search**: Integrates with Microsoft Power Platform Copilot Studio for natural language product search.
 - **How it works**: User queries are sent to the Copilot Studio endpoint. If the AI is unavailable, the app falls back to local search.
@@ -155,21 +181,6 @@ Uplyft/
 - **Screen reader support**: ARIA roles and live regions for chat messages.
 - **Scroll-to-bottom button**: Appears when new messages arrive and user is scrolled up.
 - **Color contrast**: Designed for readability and accessibility.
-
----
-
-## Development & Testing
-
-- **Linting**: `flake8` for code style
-- **Formatting**: `black` for auto-formatting
-- **Testing**: `pytest`, `pytest-flask` for backend tests
-- **Recommended workflow**:
-
-  ```powershell
-  flake8
-  black .
-  pytest
-  ```
 
 ---
 
