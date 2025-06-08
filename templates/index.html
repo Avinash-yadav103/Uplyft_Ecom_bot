@@ -75,6 +75,9 @@
                     <button class="quick-reply-btn">
                         <i class="fas fa-headset"></i> Contact Support
                     </button>
+                    <button class="quick-reply-btn" onclick="searchWithAI()">
+                        <i class="fas fa-search"></i> Search with AI
+                    </button>
                     <button class="quick-reply-btn" onclick="downloadProductsJSON()">
                         <i class="fas fa-file-download"></i> Get Products JSON
                     </button>
@@ -90,6 +93,7 @@
             </div>
         </div>
     </main>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
     <script>
         // Enhanced product data loading with preload and retries
         let allProducts = null;
@@ -1191,10 +1195,35 @@
                 if (messagesContainer) {
                     messagesContainer.scrollTop = messagesContainer.scrollHeight;
                 }
+                
+                // Ensure accessibility is set up
+                enhanceChatAccessibility();
+                
+                // Focus on input when chat opens
+                setTimeout(() => {
+                    const chatInput = document.querySelector('.chat-input input');
+                    if (chatInput) chatInput.focus();
+                }, 100);
+                
+                // Announce to screen readers that chat is open
+                const announcer = document.createElement('div');
+                announcer.setAttribute('aria-live', 'assertive');
+                announcer.className = 'sr-only';
+                announcer.textContent = 'Chat window opened';
+                document.body.appendChild(announcer);
+                setTimeout(() => document.body.removeChild(announcer), 1000);
             } else {
                 // Hide chat
                 chatbotContainer.style.display = 'none';
                 openChatBtn.style.display = 'flex';
+                
+                // Announce to screen readers that chat is closed
+                const announcer = document.createElement('div');
+                announcer.setAttribute('aria-live', 'assertive');
+                announcer.className = 'sr-only';
+                announcer.textContent = 'Chat window closed';
+                document.body.appendChild(announcer);
+                setTimeout(() => document.body.removeChild(announcer), 1000);
             }
         }
         
@@ -1207,516 +1236,96 @@
             }
         });
 
-        // Function to show contact support form in chat
-        function showContactSupport() {
-            const messagesContainer = document.querySelector('.chat-messages');
-            
-            // Add user message
-            const userMessage = document.createElement('div');
-            userMessage.classList.add('message', 'user-message');
-            userMessage.textContent = "I need help from support";
-            messagesContainer.appendChild(userMessage);
-            
-            // Create contact form message
-            const contactMessage = document.createElement('div');
-            contactMessage.classList.add('message', 'bot-message');
-            contactMessage.innerHTML = `
-                <strong>Contact Our Support Team</strong>
-                <p>Please fill out the form below and we'll get back to you within 24 hours.</p>
-                
-                <form id="support-contact-form" class="contact-form">
-                    <div class="form-group">
-                        <label for="contact-name">Name</label>
-                        <input type="text" id="contact-name" required placeholder="Your name">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="contact-email">Email</label>
-                        <input type="email" id="contact-email" required placeholder="your@email.com">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="contact-subject">Subject</label>
-                        <select id="contact-subject" required>
-                            <option value="">Select a topic</option>
-                            <option value="order">Order Issue</option>
-                            <option value="product">Product Information</option>
-                            <option value="return">Returns & Refunds</option>
-                            <option value="account">Account Support</option>
-                            <option value="other">Other</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="contact-message">Message</label>
-                        <textarea id="contact-message" rows="4" required placeholder="Please describe your issue..."></textarea>
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button type="submit" class="submit-btn">Send Message</button>
-                        <button type="button" class="cancel-btn" onclick="cancelContactForm()">Cancel</button>
-                    </div>
-                </form>
-            `;
-            
-            messagesContainer.appendChild(contactMessage);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            
-            // Add form submission handler after form is in the DOM
-            const supportForm = document.getElementById('support-contact-form');
-            supportForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                submitContactForm();
-            });
-            
-            // Add styles for contact form
-            const formStyles = document.createElement('style');
-            formStyles.textContent = `
-                .contact-form {
-                    background: #fff;
-                    border-radius: 8px;
-                    padding: 15px;
-                    margin-top: 12px;
-                    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-                }
-                
-                .form-group {
-                    margin-bottom: 15px;
-                }
-                
-                .form-group label {
-                    display: block;
-                    font-weight: 500;
-                    margin-bottom: 5px;
-                    color: #444;
-                    font-size: 0.9rem;
-                }
-                
-                .form-group input,
-                .form-group select,
-                .form-group textarea {
-                    width: 100%;
-                    padding: 10px;
-                    border: 1px solid #ddd;
-                    border-radius: 6px;
-                    font-size: 0.9rem;
-                    transition: all 0.2s;
-                }
-                
-                .form-group input:focus,
-                .form-group select:focus,
-                .form-group textarea:focus {
-                    border-color: #6b48ff;
-                    box-shadow: 0 0 0 3px rgba(107, 72, 255, 0.15);
-                    outline: none;
-                }
-                
-                .form-actions {
-                    display: flex;
-                    gap: 10px;
-                }
-                
-                .submit-btn {
-                    background: linear-gradient(135deg, #4a6fa8, #6b48ff);
-                    color: white;
-                    border: none;
-                    padding: 10px 18px;
-                    border-radius: 6px;
-                    font-weight: 500;
-                    cursor: pointer;
-                    transition: all 0.2s;
-                }
-                
-                .submit-btn:hover {
-                    transform: translateY(-2px);
-                    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-                }
-                
-                .cancel-btn {
-                    background: #f1f1f1;
-                    color: #555;
-                    border: none;
-                    padding: 10px 18px;
-                    border-radius: 6px;
-                    font-weight: 500;
-                    cursor: pointer;
-                    transition: all 0.2s;
-                }
-                
-                .cancel-btn:hover {
-                    background: #e5e5e5;
-                }
-                
-                .success-message {
-                    text-align: center;
-                    padding: 20px 0;
-                }
-                
-                .success-message i {
-                    font-size: 48px;
-                    color: #4CAF50;
-                    margin-bottom: 15px;
-                    display: block;
-                }
-            `;
-            document.head.appendChild(formStyles);
-        }
-
-        // Function to handle contact form submission
-        function submitContactForm() {
-            const name = document.getElementById('contact-name').value;
-            const email = document.getElementById('contact-email').value;
-            const subject = document.getElementById('contact-subject').value;
-            const message = document.getElementById('contact-message').value;
-            
-            // Here you would typically send this data to your backend
-            console.log('Contact form submitted:', { name, email, subject, message });
-            
-            // Remove the form
-            const formContainer = document.getElementById('support-contact-form').parentNode;
-            
-            // Display success message
-            formContainer.innerHTML = `
-                <div class="success-message">
-                    <i class="fas fa-check-circle"></i>
-                    <h3>Thank you, ${name}!</h3>
-                    <p>Your message has been sent. Our support team will contact you at ${email} within 24 hours.</p>
-                    <p>Reference #: SUPP-${Math.floor(Math.random() * 100000)}</p>
-                    <button class="quick-reply-btn" onclick="acknowledgeContact()">
-                        <i class="fas fa-thumbs-up"></i> Got it
-                    </button>
-                </div>
-            `;
-        }
-
-        // Function to cancel contact form
-        function cancelContactForm() {
-            const messagesContainer = document.querySelector('.chat-messages');
-            
-            // Add bot message
-            const cancelMessage = document.createElement('div');
-            cancelMessage.classList.add('message', 'bot-message');
-            cancelMessage.textContent = "No problem! Is there anything else I can help you with?";
-            messagesContainer.appendChild(cancelMessage);
-            
-            // Add quick replies
-            const quickReplies = document.createElement('div');
-            quickReplies.classList.add('quick-replies');
-            quickReplies.innerHTML = `
-                <button class="quick-reply-btn" onclick="getCategories()">
-                    <i class="fas fa-tshirt"></i> Browse Products
-                </button>
-                <button class="quick-reply-btn" onclick="viewCart()">
-                    <i class="fas fa-shopping-cart"></i> View Cart
-                </button>
-            `;
-            
-            messagesContainer.appendChild(quickReplies);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-
-        // Function to acknowledge the contact form submission
-        function acknowledgeContact() {
-            const messagesContainer = document.querySelector('.chat-messages');
-            
-            const followUpMessage = document.createElement('div');
-            followUpMessage.classList.add('message', 'bot-message');
-            followUpMessage.innerHTML = `
-                <p>While you wait for our support team's response, is there anything else I can help you with?</p>
-                <div class="quick-replies">
-                    <button class="quick-reply-btn" onclick="getCategories()">
-                        <i class="fas fa-tshirt"></i> Browse Products
-                    </button>
-                    <button class="quick-reply-btn">
-                        <i class="fas fa-question-circle"></i> Check FAQs
-                    </button>
-                    <button class="quick-reply-btn" onclick="viewCart()">
-                        <i class="fas fa-shopping-cart"></i> View Cart
-                    </button>
-                </div>
-            `;
-            
-            messagesContainer.appendChild(followUpMessage);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-
-        // Replace the existing Contact Support button's onclick handler
-        document.addEventListener('DOMContentLoaded', function() {
-            const contactButtons = document.querySelectorAll('.quick-reply-btn');
-            contactButtons.forEach(button => {
-                if (button.textContent.includes('Contact Support')) {
-                    button.onclick = showContactSupport;
-                }
-            });
-        });
-
-        // Function to show today's deals
-        function showTodaysDeals() {
-            if (!allProducts) {
-                showErrorMessage("Product data is still loading. Please try again in a moment.");
-                return;
+        // Add these styles to your existing style element or create a new one
+        const scrollStyles = document.createElement('style');
+        scrollStyles.textContent = `
+            .chat-messages {
+                overflow-y: auto;
+                scrollbar-width: thin;
+                scrollbar-color: #6b48ff #f0f0f0;
+                scroll-behavior: smooth;
+                max-height: 400px; /* Set a fixed height for scrolling */
+                padding-right: 10px; /* Space for scrollbar */
             }
             
-            const messagesContainer = document.querySelector('.chat-messages');
-            
-            // Add user message
-            const userMessage = document.createElement('div');
-            userMessage.classList.add('message', 'user-message');
-            userMessage.textContent = "Show me today's deals";
-            messagesContainer.appendChild(userMessage);
-            
-            // Create loading message
-            const loadingMessage = document.createElement('div');
-            loadingMessage.classList.add('message', 'bot-message');
-            loadingMessage.textContent = "Finding the best deals for today...";
-            messagesContainer.appendChild(loadingMessage);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            
-            setTimeout(() => {
-                // Remove loading message
-                messagesContainer.removeChild(loadingMessage);
-                
-                // Sort products by discount percentage (highest first)
-                const dealsProducts = [...allProducts.products]
-                    .filter(product => product.discountPercentage > 15) // Only products with >15% discount
-                    .sort((a, b) => b.discountPercentage - a.discountPercentage)
-                    .slice(0, 6); // Take top 6 deals
-                
-                if (dealsProducts.length === 0) {
-                    showBotMessage("Sorry, there are no special deals available today. Check back tomorrow!");
-                    return;
-                }
-                
-                // Get hours remaining in the day
-                const now = new Date();
-                const hoursRemaining = 23 - now.getHours();
-                const minutesRemaining = 59 - now.getMinutes();
-                
-                // Display deals
-                const dealsMessage = document.createElement('div');
-                dealsMessage.classList.add('message', 'bot-message');
-                
-                // Create deals container with header
-                dealsMessage.innerHTML = `
-                    <div class="deals-container">
-                        <div class="deals-header">
-                            <div class="deals-title">
-                                <i class="fas fa-bolt" style="color: #FFD700;"></i> 
-                                <span>TODAY'S FLASH DEALS</span>
-                            </div>
-                            <div class="deals-countdown">
-                                Ends in: <span class="countdown-timer">${hoursRemaining}h ${minutesRemaining}m</span>
-                            </div>
-                        </div>
-                        <div class="deals-products"></div>
-                    </div>
-                `;
-                
-                // Add deals products
-                const dealsProductsContainer = dealsMessage.querySelector('.deals-products');
-                
-                dealsProducts.forEach(product => {
-                    const productCard = document.createElement('div');
-                    productCard.classList.add('deal-product-card');
-                    
-                    // Calculate discount amounts
-                    const price = product.price || 0;
-                    const discountPercentage = product.discountPercentage || 0;
-                    const discountedPrice = (price * (1 - discountPercentage/100)).toFixed(2);
-                    const savedAmount = (price - discountedPrice).toFixed(2);
-                    
-                    productCard.innerHTML = `
-                        <div class="deal-product-image">
-                            ${product.thumbnail ? 
-                                `<img src="${product.thumbnail}" alt="${product.title || 'Product'}">` : 
-                                '<div class="no-image">No image</div>'}
-                            <div class="deal-badge">-${Math.round(discountPercentage)}%</div>
-                        </div>
-                        <div class="deal-product-info">
-                            <h4 class="deal-product-title">${product.title || 'Untitled Product'}</h4>
-                            <div class="deal-product-rating">
-                                ${product.rating ? `${product.rating.toFixed(1)} ⭐` : ''} 
-                            </div>
-                            <div class="deal-product-price">
-                                <span class="deal-current-price">$${discountedPrice}</span>
-                                <span class="deal-original-price">$${price.toFixed(2)}</span>
-                            </div>
-                            <div class="deal-savings">You save: $${savedAmount}</div>
-                        </div>
-                    `;
-                    
-                    productCard.addEventListener('click', () => showProductDetails(product));
-                    dealsProductsContainer.appendChild(productCard);
-                });
-                
-                messagesContainer.appendChild(dealsMessage);
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                
-                // Add CSS for deals styling
-                const dealsStyles = document.createElement('style');
-                dealsStyles.textContent = `
-                    .deals-container {
-                        background: white;
-                        border-radius: 10px;
-                        overflow: hidden;
-                        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-                        margin-top: 10px;
-                        border: 1px solid #f0f0f0;
-                    }
-                    
-                    .deals-header {
-                        background: linear-gradient(135deg, #FF6B6B, #FF8E53);
-                        color: white;
-                        padding: 12px 15px;
-                        display: flex;
-                        justify-content: space-between;
-                        align-items: center;
-                    }
-                    
-                    .deals-title {
-                        font-weight: 600;
-                        font-size: 1.1rem;
-                        display: flex;
-                        align-items: center;
-                        gap: 8px;
-                    }
-                    
-                    .deals-countdown {
-                        font-size: 0.9rem;
-                        background: rgba(255,255,255,0.15);
-                        padding: 5px 10px;
-                        border-radius: 20px;
-                        display: flex;
-                        align-items: center;
-                    }
-                    
-                    .countdown-timer {
-                        font-weight: 600;
-                        margin-left: 4px;
-                    }
-                    
-                    .deals-products {
-                        display: grid;
-                        grid-template-columns: repeat(2, 1fr);
-                        gap: 12px;
-                        padding: 15px;
-                        max-height: 400px;
-                        overflow-y: auto;
-                    }
-                    
-                    .deal-product-card {
-                        background: white;
-                        border-radius: 8px;
-                        overflow: hidden;
-                        box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-                        border: 1px solid #f0f0f0;
-                        transition: all 0.2s;
-                        cursor: pointer;
-                    }
-                    
-                    .deal-product-card:hover {
-                        transform: translateY(-3px);
-                        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-                        border-color: #e0e0e0;
-                    }
-                    
-                    .deal-product-image {
-                        height: 140px;
-                        position: relative;
-                        overflow: hidden;
-                    }
-                    
-                    .deal-product-image img {
-                        width: 100%;
-                        height: 100%;
-                        object-fit: cover;
-                    }
-                    
-                    .deal-badge {
-                        position: absolute;
-                        top: 10px;
-                        right: 10px;
-                        background: #FF6B6B;
-                        color: white;
-                        padding: 3px 8px;
-                        border-radius: 20px;
-                        font-weight: bold;
-                        font-size: 0.8rem;
-                        box-shadow: 0 2px 5px rgba(255,107,107,0.3);
-                    }
-                    
-                    .deal-product-info {
-                        padding: 12px;
-                    }
-                    
-                    .deal-product-title {
-                        margin: 0 0 5px;
-                        font-size: 0.95rem;
-                        white-space: nowrap;
-                        overflow: hidden;
-                        text-overflow: ellipsis;
-                    }
-                    
-                    .deal-product-rating {
-                        color: #888;
-                        font-size: 0.8rem;
-                        margin-bottom: 8px;
-                    }
-                    
-                    .deal-product-price {
-                        display: flex;
-                        align-items: center;
-                        gap: 6px;
-                        margin-bottom: 4px;
-                    }
-                    
-                    .deal-current-price {
-                        font-weight: bold;
-                        font-size: 1.1rem;
-                        color: #FF6B6B;
-                    }
-                    
-                    .deal-original-price {
-                        text-decoration: line-through;
-                        color: #888;
-                        font-size: 0.85rem;
-                    }
-                    
-                    .deal-savings {
-                        font-size: 0.8rem;
-                        color: #4CAF50;
-                    }
-                    
-                    @media (max-width: 500px) {
-                        .deals-products {
-                            grid-template-columns: 1fr;
-                        }
-                        
-                        .deals-header {
-                            flex-direction: column;
-                            gap: 8px;
-                            text-align: center;
-                        }
-                    }
-                `;
-                document.head.appendChild(dealsStyles);
-            }, 1000);
-        }
-
-        // Connect the Today's Deals button to the function
-        document.addEventListener('DOMContentLoaded', function() {
-            const contactButtons = document.querySelectorAll('.quick-reply-btn');
-            contactButtons.forEach(button => {
-                if (button.textContent.includes("Today's Deals")) {
-                    button.onclick = showTodaysDeals;
-                }
-            });
-            
-            // Also load products data if not already loaded
-            if (!allProducts) {
-                preloadProductData();
+            .chat-messages::-webkit-scrollbar {
+                width: 8px;
             }
-        });
+            
+            .chat-messages::-webkit-scrollbar-track {
+                background: #f0f0f0;
+                border-radius: 10px;
+            }
+            
+            .chat-messages::-webkit-scrollbar-thumb {
+                background-color: #6b48ff;
+                border-radius: 10px;
+            }
+            
+            .scroll-to-bottom {
+                position: absolute;
+                bottom: 70px;
+                right: 20px;
+                background: #6b48ff;
+                color: white;
+                border: none;
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+                transition: all 0.2s;
+                opacity: 0;
+                pointer-events: none;
+                z-index: 100;
+            }
+            
+            .scroll-to-bottom.visible {
+                opacity: 1;
+                pointer-events: auto;
+            }
+            
+            .scroll-to-bottom:hover {
+                background: #5136e0;
+                transform: translateY(-2px);
+            }
+            
+            .new-message-indicator {
+                position: absolute;
+                bottom: 70px;
+                right: 70px;
+                background: #ff6b6b;
+                color: white;
+                border: none;
+                padding: 5px 10px;
+                border-radius: 12px;
+                font-size: 12px;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+                opacity: 0;
+                transition: opacity 0.3s;
+                pointer-events: none;
+            }
+            
+            .new-message-indicator.visible {
+                opacity: 1;
+            }
+            
+            .chatbot-container {
+                position: relative;  /* For absolute positioning of child elements */
+            }
+
+            /* Focus visible styles for accessibility */
+            .quick-reply-btn:focus-visible,
+            .chat-input input:focus-visible,
+            .chat-input button:focus-visible {
+                outline: 3px solid #6b48ff;
+                outline-offset: 2px;
+            }
+        `;
+        document.head.appendChild(scrollStyles);
     </script>
 </body>
 </html>
