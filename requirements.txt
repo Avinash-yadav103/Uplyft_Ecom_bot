@@ -1,0 +1,33 @@
+# Core web framework
+Flask==2.3.3
+Werkzeug==2.3.7
+Jinja2==3.1.2
+itsdangerous==2.1.2
+click==8.1.7
+
+# API and HTTP handling
+requests==2.31.0
+urllib3==2.0.4
+certifi==2023.7.22
+
+# Environment and configuration
+python-dotenv==1.0.0
+python-decouple==3.8
+
+# Data processing
+numpy==1.25.2
+pandas==2.1.0
+
+# For Power Platform integration
+msal==1.24.0
+azure-identity==1.14.0
+
+# Development tools
+pytest==7.4.2
+pytest-flask==1.2.0
+flake8==6.1.0
+black==23.7.0
+
+# Production deployment
+gunicorn==21.2.0
+gevent==23.7.0

@@ -26,13 +26,97 @@ body {
 header {
   background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
   color: var(--light-text);
-  padding: 1rem;
-  box-shadow: var(--shadow);
+  padding: 1rem 2rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 50; /* Lower z-index to stay at back */
+  width: 100%;
+  box-sizing: border-box;
 }
 
+/* Header background layer for additional visual depth */
+header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect fill-opacity="0.05" fill="%23FFFFFF" x="0" y="0" width="50" height="50" /><rect fill-opacity="0.05" fill="%23FFFFFF" x="50" y="50" width="50" height="50" /></svg>');
+  background-size: 20px 20px;
+  opacity: 0.3;
+  z-index: -1;
+}
+
+/* Enhanced title styling */
 header h1 {
   margin: 0;
-  font-weight: 700;
+  font-weight: 800;
+  font-size: 1.8rem;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  letter-spacing: 0.5px;
+  position: relative;
+  z-index: 2;
+}
+
+/* Updated navigation styling */
+header nav {
+  display: flex;
+  align-items: center;
+  position: relative;
+  z-index: 2;
+}
+
+header nav ul {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  gap: 1.5rem;
+}
+
+header nav ul li {
+  position: relative;
+}
+
+header nav ul li a {
+  color: var(--light-text);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 0.5rem 0.8rem;
+  border-radius: 6px;
+  transition: all 0.2s;
+  opacity: 0.9;
+  letter-spacing: 0.3px;
+}
+
+header nav ul li a:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+  opacity: 1;
+  transform: translateY(-2px);
+}
+
+header nav ul li a.active {
+  background-color: rgba(255, 255, 255, 0.2);
+  opacity: 1;
+}
+
+/* Active page indicator */
+header nav ul li a.active::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 3px;
+  background-color: var(--accent-color);
+  border-radius: 3px;
 }
 
 /* Main content area */
@@ -344,6 +428,70 @@ main {
   border-top: 1px solid #f0f0f0;
 }
 
+/* Enhanced Chat Button Styling */
+.openbox {
+  position: fixed;
+  bottom: 70px;
+  right: 100px;
+  z-index: 999;
+}
+
+.open-chat-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  color: white;
+  border: none;
+  border-radius: 50px;
+  padding: 14px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(107, 72, 255, 0.35);
+  transition: all 0.3s ease;
+}
+
+.open-chat-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(107, 72, 255, 0.45);
+}
+
+.open-chat-btn:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 10px rgba(107, 72, 255, 0.3);
+}
+
+.open-chat-btn i {
+  font-size: 18px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Add pulse animation to draw attention */
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(107, 72, 255, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(107, 72, 255, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(107, 72, 255, 0);
+  }
+}
+
+/* Apply pulse animation when page loads */
+.open-chat-btn {
+  animation: pulse 2s infinite;
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
   main {
@@ -370,5 +518,16 @@ main {
   
   .product-suggestions {
     max-width: 100%;
+  }
+  
+  .open-chat-btn {
+    padding: 12px 20px;
+    font-size: 14px;
+  }
+  
+  .open-chat-btn i {
+    width: 24px;
+    height: 24px;
+    font-size: 14px;
   }
 }
